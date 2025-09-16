@@ -1,0 +1,30 @@
+// tsconfig.json (프로젝트 루트)
+{
+  "compilerOptions": {
+    "target": "ESNext",                          // 최신 ES 기능 허용
+    "useDefineForClassFields": true,
+    
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],     // 브라우저 API + ESNext
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,                               // 엄격 모드
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",                               // 절대 경로 매핑 기준
+    "paths": {                                    // src 절대경로 별칭 예시
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [
+    "src",                // .ts/.tsx 파일들
+    "src/vite-env.d.ts"   // Vite env 선언 파일
+  ]
+}
