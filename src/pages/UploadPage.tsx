@@ -25,7 +25,7 @@ import { aiSummaryAPI, aiQuestionAPI, summaryAPI, questionAPI } from '../service
 import TuneIcon from '@mui/icons-material/Tune'
 import SchoolIcon from '@mui/icons-material/School'
 import { 
-   Card, Avatar,Chip
+   Card, Avatar,Chip, Divider, AccordionSummary, AccordionDetails, Accordion
 } from '@mui/material';
 import { 
    CheckCircle, Description 
@@ -38,7 +38,9 @@ import ShortTextIcon from '@mui/icons-material/ShortText'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import { IconButton, Dialog, DialogTitle, DialogContent } from '@mui/material';
-import {jsPDF} from 'jspdf';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { jsPDF } from 'jspdf';
+
 type MainTab = 'summary' | 'problem'
 
 type AiSummaryPromptKey =
@@ -136,20 +138,35 @@ export default function UploadPage() {
   const [optionFormat, setOptionFormat] = useState('단답형') 
   const [openSumDoneSnackbar, setOpenSumDoneSnackbar] = useState(false)
   const [openQDoneSnackbar, setOpenQDoneSnackbar] = useState(false)
+
+  // 새로운 상태 추가: 파싱된 문제들
+  const [parsedQuestions, setParsedQuestions] = useState<any[]>([])
+  const [isJsonFormat, setIsJsonFormat] = useState(false)
+
   useEffect(() => {
-    // 폰트 로드
-    fetch('/fonts/NotoSansKR-Regular.ttf')
-      .then(res => res.arrayBuffer())
-      .then(buf => {
-        const b64 = btoa(
-          new Uint8Array(buf).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
-        // @ts-ignore
-        jsPDF.API.addFileToVFS('NotoSansKR-Regular.ttf', b64);
-        // @ts-ignore
-        jsPDF.API.addFont('NotoSansKR-Regular.ttf', 'NotoSansKR', 'normal');
-      })
-      .catch(console.error);
+    // jsPDF 폰트 로드를 조건부로 처리
+    const loadFont = async () => {
+      try {
+        const response = await fetch('/fonts/NotoSansKR-Regular.ttf');
+        if (response.ok) {
+          const buffer = await response.arrayBuffer();
+          const b64 = btoa(
+            new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+          );
+          
+          // jsPDF API가 준비되었는지 확인
+          if (jsPDF && jsPDF.API) {
+            jsPDF.API.addFileToVFS('NotoSansKR-Regular.ttf', b64);
+            jsPDF.API.addFont('NotoSansKR-Regular.ttf', 'NotoSansKR', 'normal');
+          }
+        }
+      } catch (error) {
+        console.log('폰트 로드 실패:', error);
+        // 폰트 로드에 실패해도 앱이 계속 작동하도록 함
+      }
+    };
+    
+    loadFont();
   }, []);
 
   // handlers
@@ -211,6 +228,262 @@ export default function UploadPage() {
     }
   }
 
+  // JSON 파싱 함수들 추가
+  const parseQuestionJson = (jsonText: string) => {
+    try {
+      const data = JSON.parse(jsonText)
+      if (data.questions && Array.isArray(data.questions)) {
+        setParsedQuestions(data.questions)
+        setIsJsonFormat(true)
+        return true
+      }
+    } catch (error) {
+      console.error('JSON 파싱 오류:', error)
+    }
+    setIsJsonFormat(false)
+    setParsedQuestions([])
+    return false
+  }
+
+  // 문제 유형별 렌더링 컴포넌트
+  const renderMultipleChoice = (question: any, index: number) => (
+    <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        문제 {index + 1}: {question.question_text}
+      </Typography>
+      
+      {question.options && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>보기:</Typography>
+          {question.options.map((option: any, optIndex: number) => (
+            <Typography key={optIndex} variant="body1" sx={{ ml: 2, mb: 0.5 }}>
+              {option.id}. {option.text}
+            </Typography>
+          ))}
+        </Box>
+      )}
+
+      <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText' }}>
+          답: {question.correct_answer}
+        </Typography>
+      </Box>
+
+      {question.explanation && (
+        <Box sx={{ bgcolor: 'info.light', p: 2, borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'info.contrastText', mb: 1 }}>
+            해설:
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'info.contrastText' }}>
+            {question.explanation}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  )
+
+  const renderSequence = (question: any, index: number) => (
+    <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        문제 {index + 1}: {question.question_text}
+      </Typography>
+      
+      {question.items && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>선택지:</Typography>
+          {question.items.map((item: any, itemIndex: number) => (
+            <Typography key={itemIndex} variant="body1" sx={{ ml: 2, mb: 0.5 }}>
+              {item.id}. {item.text}
+            </Typography>
+          ))}
+        </Box>
+      )}
+
+      <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText' }}>
+          정답 순서: {question.correct_sequence?.join(' → ')}
+        </Typography>
+      </Box>
+
+      {question.explanation && (
+        <Box sx={{ bgcolor: 'info.light', p: 2, borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'info.contrastText', mb: 1 }}>
+            해설:
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'info.contrastText' }}>
+            {question.explanation}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  )
+
+  const renderTrueFalse = (question: any, index: number) => (
+    <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        문제 {index + 1}: {question.question_text}
+      </Typography>
+      
+      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+        보기: 참 / 거짓
+      </Typography>
+
+      <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText' }}>
+          답: {question.correct_answer ? '참' : '거짓'}
+        </Typography>
+      </Box>
+
+      {question.explanation && (
+        <Box sx={{ bgcolor: 'info.light', p: 2, borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'info.contrastText', mb: 1 }}>
+            해설:
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'info.contrastText' }}>
+            {question.explanation}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  )
+
+  const renderFillInTheBlank = (question: any, index: number) => (
+    <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        문제 {index + 1}: {question.question_text}
+      </Typography>
+      
+      {question.blanks && question.blanks[0]?.options && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>보기:</Typography>
+          {question.blanks[0].options.map((option: any, optIndex: number) => (
+            <Typography key={optIndex} variant="body1" sx={{ ml: 2, mb: 0.5 }}>
+              {option.id}. {option.text}
+            </Typography>
+          ))}
+        </Box>
+      )}
+
+      <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText' }}>
+          답: {question.blanks?.[0]?.correct_answer}
+        </Typography>
+      </Box>
+
+      {question.explanation && (
+        <Box sx={{ bgcolor: 'info.light', p: 2, borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'info.contrastText', mb: 1 }}>
+            해설:
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'info.contrastText' }}>
+            {question.explanation}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  )
+
+  const renderShortAnswer = (question: any, index: number) => (
+    <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        문제 {index + 1}: {question.question_text}
+      </Typography>
+      
+      <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText', mb: 1 }}>
+          답: {question.correct_answer}
+        </Typography>
+        {question.alternative_answers && question.alternative_answers.length > 0 && (
+          <Typography variant="body2" sx={{ color: 'success.contrastText' }}>
+            대체답안: {question.alternative_answers.join(', ')}
+          </Typography>
+        )}
+      </Box>
+
+      {question.explanation && (
+        <Box sx={{ bgcolor: 'info.light', p: 2, borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'info.contrastText', mb: 1 }}>
+            해설:
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'info.contrastText' }}>
+            {question.explanation}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  )
+
+  const renderDescriptive = (question: any, index: number) => (
+    <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        문제 {index + 1}: {question.question_text}
+      </Typography>
+      
+      {question.answer_keywords && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>채점 키워드:</Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {question.answer_keywords.map((keyword: string, kIndex: number) => (
+              <Chip key={kIndex} label={keyword} size="small" color="primary" variant="outlined" />
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      <Accordion sx={{ mb: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            모범답안 보기
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ color: 'success.contrastText' }}>
+              {question.model_answer}
+            </Typography>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {question.explanation && (
+        <Box sx={{ bgcolor: 'info.light', p: 2, borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'info.contrastText', mb: 1 }}>
+            해설:
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'info.contrastText' }}>
+            {question.explanation}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  )
+
+  // 문제 유형 판별 및 렌더링
+  const renderQuestion = (question: any, index: number) => {
+    // n지 선다형
+    if (question.options && question.correct_answer && typeof question.correct_answer === 'string') {
+      return renderMultipleChoice(question, index)
+    }
+    // 순서 배열형
+    if (question.items && question.correct_sequence) {
+      return renderSequence(question, index)
+    }
+    // 참거짓형
+    if (typeof question.correct_answer === 'boolean') {
+      return renderTrueFalse(question, index)
+    }
+    // 빈칸 채우기형
+    if (question.blanks) {
+      return renderFillInTheBlank(question, index)
+    }
+    // 서술형
+    if (question.answer_keywords || question.model_answer) {
+      return renderDescriptive(question, index)
+    }
+    // 단답형 (기본)
+    return renderShortAnswer(question, index)
+  }
+
   const handleGenerateQuestion = async () => {
     if (!summaryText || !user) return alert('요약 후 문제 생성을 눌러주세요')
     setLoadingQ(true)
@@ -230,6 +503,9 @@ export default function UploadPage() {
       if (qTab === 2) payload.blank_count = blankCount
       const res = await aiQuestionAPI.generateQuestions(payload)
       setQuestionText(res.data.result)
+      
+      // JSON 파싱 시도
+      parseQuestionJson(res.data.result)
     } catch (e: any) {
       console.error(e)
       alert(e.response?.data?.detail || '문제 생성 오류')
@@ -253,11 +529,12 @@ export default function UploadPage() {
       alert('문제 저장 중 오류')
     }
   }
+
   const handleKeywordChange = (index: number, value: string) => {
-  const newKeywords = [...keywords];
-  newKeywords[index] = value;
-  setKeywords(newKeywords);
-};
+    const newKeywords = [...keywords];
+    newKeywords[index] = value;
+    setKeywords(newKeywords);
+  };
 // handleDownloadSummary 함수 수정
 const handleDownloadSummary = async () => {
   try {
@@ -1761,9 +2038,18 @@ const handleDownloadQuestion = async () => {
                         ⬇️ 다운로드
                       </Button>
                     </Box>
-                    <Typography style={{ whiteSpace: 'pre-wrap' }} color="text.secondary">
-                      {questionText}
-                    </Typography>
+                    
+                    {/* JSON 형식일 때는 파싱된 결과를 보여주고, 아닐 때는 기존 텍스트 */}
+                    {isJsonFormat ? (
+                      <Box>
+                        {parsedQuestions.map((question, index) => renderQuestion(question, index))}
+                      </Box>
+                    ) : (
+                      <Typography style={{ whiteSpace: 'pre-wrap' }} color="text.secondary">
+                        {questionText}
+                      </Typography>
+                    )}
+                    
                     <Stack direction="row" justifyContent="center" spacing={2}>
                       <Button variant="outlined" onClick={handleSaveQuestion} sx={{ borderRadius: 2.5, px: 3 }}>
                         💾 문제 저장
