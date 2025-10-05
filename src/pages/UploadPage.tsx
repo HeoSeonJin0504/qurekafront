@@ -674,7 +674,7 @@ export default function UploadPage() {
                   color="text.secondary"
                   sx={{ mt: 1, fontStyle: "italic" }}
                 >
-                  * 요약본이 있으면 요약 기반으로, 없으면 파일에서 직접 문제를 생성할 수 있습니다.
+                  * 요약본이 있으면 요약본을 기반으로, 없으면 파일에서 바로 문제를 생성할 수 있습니다.
                 </Typography>
               </Box>
               {loadingQ && <LinearProgress sx={{ mb: 2, height: 6, borderRadius: 1 }} />}
