@@ -239,7 +239,7 @@ export default function UploadPage() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("question_type", aiQuestionPromptKeys_Korean[qTab]);
+      fd.append("generation_type", `문제 생성_${aiQuestionPromptKeys_Korean[qTab]}`);
       fd.append("field", qField);
       fd.append("level", qLevel);
       fd.append("question_count", String(qCount));
