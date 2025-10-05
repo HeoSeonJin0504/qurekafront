@@ -256,6 +256,12 @@ export const aiQuestionAPI = {
     aiAPI.post('/generate', data, {
       headers: { 'Content-Type': 'application/json' },
     }),
+  
+  // 파일에서 직접 문제 생성 API 추가
+  generateQuestionsFromFile: (formData: FormData) =>
+    aiAPI.post('/generate-from-file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 // 요약 저장·조회·삭제 API

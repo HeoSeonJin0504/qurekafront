@@ -17,6 +17,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { CloudUpload } from "@mui/icons-material";
 import Header from "../components/Header";
@@ -44,6 +45,8 @@ import {
   questionLabels,
 } from "../constants/upload";
 import { jsPDF } from "jspdf";
+import SavedSummaryDialog from "../components/upload/SavedSummaryDialog";
+import { SummaryItem } from "../services/api";
 
 export default function UploadPage() {
   const { user } = useAuth();
@@ -90,6 +93,11 @@ export default function UploadPage() {
   // parsed questions state
   const [parsedQuestions, setParsedQuestions] = useState<Question[]>([]);
   const [isJsonFormat, setIsJsonFormat] = useState(false);
+
+  // 추가할 상태들
+  const [openSavedSummariesDialog, setOpenSavedSummariesDialog] = useState(false);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [selectedSummary, setSelectedSummary] = useState<SummaryItem | null>(null);
 
   useEffect(() => {
     // jsPDF 폰트 로드를 조건부로 처리
@@ -224,6 +232,37 @@ export default function UploadPage() {
     }
   };
 
+  // 파일에서 직접 문제 생성 함수 추가
+  const handleGenerateQuestionFromFile = async () => {
+    if (!file || !user) return alert("파일 선택 및 로그인 필요");
+    setLoadingQ(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("question_type", aiQuestionPromptKeys_Korean[qTab]);
+      fd.append("field", qField);
+      fd.append("level", qLevel);
+      fd.append("question_count", String(qCount));
+
+      if (qTab === 0) {
+        fd.append("choice_count", String(optCount));
+        fd.append("choice_format", optionFormat);
+      }
+      if (qTab === 1) fd.append("array_choice_count", String(optCount));
+      if (qTab === 2) fd.append("blank_count", String(blankCount));
+
+      const res = await aiQuestionAPI.generateQuestionsFromFile(fd);
+      setQuestionText(res.data.result);
+
+      parseQuestionJson(res.data.result);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.response?.data?.detail || "문제 생성 오류");
+    } finally {
+      setLoadingQ(false);
+    }
+  };
+
   const handleSaveQuestion = async () => {
     if (!user || !fileName) return;
     try {
@@ -262,6 +301,42 @@ export default function UploadPage() {
     } catch (error) {
       alert("PDF 다운로드 중 오류가 발생했습니다.");
     }
+  };
+
+  // 저장된 요약 선택 핸들러
+  const handleSelectSavedSummary = (summary: SummaryItem) => {
+    if (summaryText && summaryText.trim() !== '') {
+      // 현재 작성 중인 요약이 있으면 확인창 표시
+      setSelectedSummary(summary);
+      setOpenConfirmDialog(true);
+    } else {
+      // 없으면 바로 적용
+      applySavedSummary(summary);
+    }
+  };
+
+  // 선택한 저장된 요약을 현재 요약으로 적용
+  const applySavedSummary = (summary: SummaryItem) => {
+    setSummaryText(summary.summary_text);
+    setFileName(summary.file_name);
+    
+    // 요약 타입도 업데이트
+    const typeIndex = dbSummaryPromptKeys_Korean.indexOf(summary.summary_type as DbSummaryPromptKey_Korean);
+    if (typeIndex !== -1) {
+      setSumTab(typeIndex);
+      setAiSummaryType(aiSummaryPromptKeys[typeIndex]);
+      setDbSummaryTypeKorean(dbSummaryPromptKeys_Korean[typeIndex]);
+    }
+    
+    setSelectedSummary(null);
+  };
+
+  // 저장된 요약으로 변경 확인
+  const handleConfirmChangeSummary = () => {
+    if (selectedSummary) {
+      applySavedSummary(selectedSummary);
+    }
+    setOpenConfirmDialog(false);
   };
 
   return (
@@ -542,31 +617,67 @@ export default function UploadPage() {
                 summaryText={summaryText}
                 openSummaryDialog={openSummaryDialog}
                 setOpenSummaryDialog={setOpenSummaryDialog}
+                openSavedSummariesDialog={() => setOpenSavedSummariesDialog(true)}
+                hasSummaryText={!!summaryText && summaryText.trim() !== ''}
               />
-              {/* Generate Question */}
+              
+              {/* Generate Question Buttons - 두 가지 방식 제공 */}
               <Box textAlign="center" mb={2}>
-                <Button
-                  variant="contained"
-                  onClick={handleGenerateQuestion}
-                  disabled={loadingQ}
-                  size="large"
-                  sx={{
-                    borderRadius: 3,
-                    px: 4,
-                    py: 1.5,
-                    fontWeight: 600,
-                    background: (theme) =>
-                      theme.palette.mode === "light"
-                        ? "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)"
-                        : "linear-gradient(45deg, #1565C0 30%, #0277BD 90%)",
-                  }}
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  justifyContent="center"
+                  sx={{ mb: 2 }}
                 >
-                  ✏️ 문제 생성
-                </Button>
+                  {/* 요약 기반 문제 생성 버튼 */}
+                  <Button
+                    variant="contained"
+                    onClick={handleGenerateQuestion}
+                    disabled={loadingQ || !summaryText}
+                    size="large"
+                    sx={{
+                      borderRadius: 3,
+                      px: 4,
+                      py: 1.5,
+                      fontWeight: 600,
+                      background: (theme) =>
+                        theme.palette.mode === "light"
+                          ? "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)"
+                          : "linear-gradient(45deg, #1565C0 30%, #0277BD 90%)",
+                    }}
+                  >
+                    📝 요약본으로 문제 생성
+                  </Button>
+
+                  {/* 파일 기반 문제 생성 버튼 */}
+                  <Button
+                    variant="contained"
+                    onClick={handleGenerateQuestionFromFile}
+                    disabled={loadingQ || !file}
+                    size="large"
+                    sx={{
+                      borderRadius: 3,
+                      px: 4,
+                      py: 1.5,
+                      fontWeight: 600,
+                      background: (theme) =>
+                        theme.palette.mode === "light"
+                          ? "linear-gradient(45deg, #FF9800 30%, #FFCA28 90%)"
+                          : "linear-gradient(45deg, #F57C00 30%, #FFB300 90%)",
+                    }}
+                  >
+                    📄 파일로 바로 문제 생성
+                  </Button>
+                </Stack>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1, fontStyle: "italic" }}
+                >
+                  * 요약본이 있으면 요약 기반으로, 없으면 파일에서 직접 문제를 생성할 수 있습니다.
+                </Typography>
               </Box>
-              {loadingQ && (
-                <LinearProgress sx={{ mb: 2, height: 6, borderRadius: 1 }} />
-              )}
+              {loadingQ && <LinearProgress sx={{ mb: 2, height: 6, borderRadius: 1 }} />}
 
               {/* Question Result */}
               {questionText && (
@@ -673,7 +784,7 @@ export default function UploadPage() {
             </>
           )}
 
-          {/* Summary Dialog */}
+          {/* 기존 Summary Dialog */}
           <Dialog
             open={openSummaryDialog}
             onClose={() => setOpenSummaryDialog(false)}
@@ -686,6 +797,32 @@ export default function UploadPage() {
                 {summaryText || "먼저 요약을 생성해 주세요."}
               </Typography>
             </DialogContent>
+          </Dialog>
+
+          {/* 저장된 요약 목록 다이얼로그 */}
+          <SavedSummaryDialog
+            open={openSavedSummariesDialog}
+            onClose={() => setOpenSavedSummariesDialog(false)}
+            onSelectSummary={handleSelectSavedSummary}
+          />
+
+          {/* 요약 변경 확인 다이얼로그 */}
+          <Dialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)}>
+            <DialogTitle>요약본 변경 확인</DialogTitle>
+            <DialogContent>
+              <Typography>
+                현재 작성된 요약본이 있습니다. 저장된 요약본으로 변경하시겠습니까?
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                변경하면 현재 작성된 요약본은 사라집니다.
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenConfirmDialog(false)}>취소</Button>
+              <Button onClick={handleConfirmChangeSummary} color="primary" variant="contained">
+                변경
+              </Button>
+            </DialogActions>
           </Dialog>
         </Container>
       </Box>

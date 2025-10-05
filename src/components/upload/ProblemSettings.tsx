@@ -14,7 +14,10 @@ import {
 } from '@mui/material'
 import { Settings as SettingsIcon } from '@mui/icons-material'
 import SchoolIcon from '@mui/icons-material/School'
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
 import { questionLabels, aiQuestionPromptKeys_Korean, FIELD_OPTIONS, LEVEL_OPTIONS } from '../../constants/upload'
+import SavedSummaryDialog from './SavedSummaryDialog'
+import { SummaryItem } from '../../services/api'
 
 interface ProblemSettingsProps {
   qTab: number
@@ -34,6 +37,9 @@ interface ProblemSettingsProps {
   summaryText: string
   openSummaryDialog: boolean
   setOpenSummaryDialog: (value: boolean) => void
+  // 새로운 props 추가
+  openSavedSummariesDialog: () => void
+  hasSummaryText: boolean
 }
 
 export default function ProblemSettings({
@@ -54,6 +60,8 @@ export default function ProblemSettings({
   summaryText,
   openSummaryDialog,
   setOpenSummaryDialog,
+  openSavedSummariesDialog,
+  hasSummaryText,
 }: ProblemSettingsProps) {
   return (
     <>
@@ -137,12 +145,27 @@ export default function ProblemSettings({
             <SettingsIcon sx={{ color: '#6366f1' }} />
             문제 설정
           </Box>
-          <Button 
-            variant="outlined"
-            onClick={() => setOpenSummaryDialog(true)}
-          >
-            만든 요약본 보기
-          </Button>
+          <Box display="flex" gap={1}>
+            {hasSummaryText && (
+              <Button 
+                variant="outlined"
+                startIcon={<LibraryBooksIcon />}
+                onClick={() => setOpenSummaryDialog(true)}
+                size="small"
+              >
+                현재 요약본 보기
+              </Button>
+            )}
+            <Button 
+              variant="outlined"
+              color="secondary"
+              startIcon={<LibraryBooksIcon />}
+              onClick={openSavedSummariesDialog}
+              size="small"
+            >
+              저장된 요약 선택하기
+            </Button>
+          </Box>
         </Typography>
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
