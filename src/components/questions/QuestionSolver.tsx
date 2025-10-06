@@ -52,9 +52,21 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           parsedQuestion.type = rawData.questions[0].type;
         }
         
-        // 순서배열형 문제 타입 감지 (correct_sequence가 있으면)
-        if (rawData.questions.length > 0 && rawData.questions[0].correct_sequence) {
-          parsedQuestion.type = 'sequence';
+        // 문제 타입 자동 감지
+        if (rawData.questions.length > 0) {
+          const firstQ = rawData.questions[0];
+          
+          // 순서배열형 문제 감지 (correct_sequence가 있으면)
+          if (firstQ.correct_sequence) {
+            parsedQuestion.type = 'sequence';
+          }
+          
+          // 빈칸 채우기형 문제 감지 (blanks가 있거나 문제 텍스트에 ____가 있으면)
+          else if (firstQ.blanks || 
+                  (firstQ.question_text && firstQ.question_text.includes('____')) ||
+                  firstQ.correct_answers) {
+            parsedQuestion.type = 'fill_in_the_blank';
+          }
         }
       } 
       // 단일 문제 형식인 경우
@@ -64,15 +76,24 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           parsedQuestion.type = rawData.type;
         }
         
+        // 문제 타입 자동 감지
         // 순서배열형 문제 감지 (correct_sequence가 있으면)
         if (rawData.correct_sequence) {
           parsedQuestion.type = 'sequence';
+        }
+        // 빈칸 채우기형 문제 감지
+        else if (rawData.blanks || 
+                (rawData.question_text && rawData.question_text.includes('____')) ||
+                rawData.correct_answers) {
+          parsedQuestion.type = 'fill_in_the_blank';
         }
         
         // 단일 문제를 배열에 추가
         parsedQuestion.questions = [rawData];
       }
 
+      console.log("파싱된 문제 데이터:", parsedQuestion);
+      
       // 유형에 따라 질문 구조 검증 및 필요한 필드 추가 처리
       processQuestionType(parsedQuestion);
 
@@ -108,6 +129,35 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         
         // 디버깅용 로그
         console.log('순서배열 문제 확인:', question);
+      }
+      
+      // 빈칸 채우기형 문제 전처리
+      if (data.type === 'fill_in_the_blank') {
+        // 빈칸이 없으면 생성
+        if (!question.blanks) {
+          question.blanks = [];
+          
+          // 문제 텍스트에서 빈칸 위치 찾기
+          const blankCount = (question.question_text?.match(/____/g) || []).length;
+          
+          if (blankCount > 0) {
+            for (let i = 0; i < blankCount; i++) {
+              question.blanks.push({
+                id: String(i),
+                correct_answer: question.correct_answers?.[i] || ''
+              });
+            }
+          } 
+          // 문제 텍스트에 빈칸 표시가 없지만 correct_answer가 있는 경우
+          else if (question.correct_answer) {
+            question.blanks.push({
+              id: '0',
+              correct_answer: question.correct_answer
+            });
+          }
+        }
+        
+        console.log('빈칸 채우기 문제 확인:', question);
       }
     });
   };
@@ -168,12 +218,18 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
       case 'fill_in_the_blank':
         // 단일 빈칸인 경우
         if (typeof userAnswer === 'string') {
-          return userAnswer === currentQuestion.blanks[0].correct_answer;
+          const correctAnswer = currentQuestion.correct_answer || 
+                              currentQuestion.blanks?.[0]?.correct_answer || '';
+          return userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
         }
         // 여러 빈칸인 경우
-        return Object.values(userAnswer).every((value, index) => 
-          value === currentQuestion.blanks[index].correct_answer
-        );
+        if (!currentQuestion.blanks) return false;
+        
+        return Object.entries(userAnswer).every(([index, value]) => {
+          const correctAnswer = currentQuestion.blanks[Number(index)]?.correct_answer || 
+                             currentQuestion.correct_answers?.[Number(index)] || '';
+          return String(value).trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+        });
       case 'short_answer':
         const correctAnswers = [
           currentQuestion.correct_answer, 

@@ -3,12 +3,12 @@ import {
   Box,
   Typography,
   TextField,
-  FormControl,
-  Select,
-  MenuItem,
-  FormHelperText,
-  Paper
+  Paper,
+  Grid,
+  Alert
 } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 
 interface FillInTheBlankQuestionProps {
   question: any;
@@ -26,41 +26,63 @@ export default function FillInTheBlankQuestion({
   // 빈칸 위치 표시 문자열
   const BLANK_MARKER = '____';
   
+  // 질문 텍스트 확인 - 추가 정의
+  const questionText = question.question_text || question.question || '';
+  
   // 처리된 문제 텍스트를 저장할 상태
   const [processedText, setProcessedText] = useState<JSX.Element[]>([]);
   
   // 현재 사용자 응답을 관리
   const [currentAnswers, setCurrentAnswers] = useState<{[key: string]: string}>({});
+  
+  // 빈칸 데이터 저장 상태
+  const [blanks, setBlanks] = useState<any[]>([]);
 
   // 초기 로드 및 사용자 답변 변경 시 상태 업데이트
   useEffect(() => {
-    // 사용자 답변이 객체인 경우 (여러 빈칸)
     if (userAnswer && typeof userAnswer === 'object') {
       setCurrentAnswers(userAnswer);
-    } 
-    // 사용자 답변이 문자열인 경우 (단일 빈칸)
-    else if (userAnswer) {
-      setCurrentAnswers({ '1': userAnswer });
-    } 
-    // 답변이 없는 경우 초기화
-    else {
+    } else if (userAnswer) {
+      setCurrentAnswers({ '0': userAnswer });
+    } else {
       const initialAnswers: {[key: string]: string} = {};
-      if (question.blanks && Array.isArray(question.blanks)) {
-        question.blanks.forEach((blank: any) => {
-          initialAnswers[blank.id] = '';
+      let detectedBlanks: any[] = [];
+      
+      if (question.blanks && Array.isArray(question.blanks) && question.blanks.length > 0) {
+        question.blanks.forEach((_: any, index: number) => {
+          initialAnswers[String(index)] = '';
         });
+        detectedBlanks = [...question.blanks];
+      } else if (question.correct_answer) {
+        initialAnswers['0'] = '';
+        detectedBlanks = [{ id: '0', correct_answer: question.correct_answer }];
+      } else {
+        const blankCount = (questionText.match(new RegExp(BLANK_MARKER, 'g')) || []).length;
+        
+        if (blankCount > 0) {
+          for (let i = 0; i < blankCount; i++) {
+            initialAnswers[String(i)] = '';
+            detectedBlanks.push({
+              id: String(i),
+              correct_answer: question.correct_answers?.[i] || ''
+            });
+          }
+        }
       }
+      
+      if (detectedBlanks.length === 0) {
+        initialAnswers['0'] = '';
+        detectedBlanks = [{ id: '0', correct_answer: '' }];
+      }
+      
+      setBlanks(detectedBlanks);
       setCurrentAnswers(initialAnswers);
     }
-  }, [userAnswer, question]);
+  }, [question, userAnswer, questionText]);
 
   // 문제 텍스트 처리
   useEffect(() => {
-    const questionText = question.question_text || '';
-    const blanks = question.blanks || [];
-    
-    // 단일 빈칸 문제인 경우 처리
-    if (questionText.includes(BLANK_MARKER) && (!blanks || blanks.length === 0)) {
+    if (questionText && questionText.includes(BLANK_MARKER)) {
       const parts = questionText.split(BLANK_MARKER);
       const result: JSX.Element[] = [];
       
@@ -68,187 +90,146 @@ export default function FillInTheBlankQuestion({
         result.push(<span key={`part-${index}`}>{part}</span>);
         
         if (index < parts.length - 1) {
-          const isCorrect = showResult && currentAnswers['1'] === (question.correct_answer || '');
           result.push(
             <TextField
               key={`blank-${index}`}
               size="small"
               variant="outlined"
-              value={currentAnswers['1'] || ''}
-              onChange={(e) => handleAnswerChange('1', e.target.value)}
-              disabled={showResult}
-              error={showResult && !isCorrect}
-              helperText={showResult && !isCorrect 
-                ? `정답: ${question.correct_answer || ''}` 
-                : ''}
+              value={currentAnswers[String(index)] || ''}
               sx={{ 
                 mx: 1, 
                 width: '150px',
-                backgroundColor: showResult 
-                  ? isCorrect 
-                    ? 'success.light' 
-                    : 'error.light'
-                  : 'background.paper',
-                input: {
-                  color: showResult ? 'white' : 'inherit',
-                }
-              }}
-              InputProps={{
-                style: { color: showResult ? 'white' : 'inherit' },
+                input: { color: 'inherit' },
               }}
             />
           );
         }
       });
-      
-      setProcessedText(result);
-    } 
-    // 여러 빈칸 문제인 경우 처리
-    else if (Array.isArray(blanks) && blanks.length > 0) {
-      let text = questionText;
-      const result: JSX.Element[] = [];
-      
-      blanks.sort((a, b) => {
-        const aPos = text.indexOf(a.position || BLANK_MARKER);
-        const bPos = text.indexOf(b.position || BLANK_MARKER);
-        return aPos - bPos;
-      });
-      
-      blanks.forEach((blank, index) => {
-        const marker = blank.position || BLANK_MARKER;
-        const parts = text.split(marker, 2);
-        
-        if (parts[0]) {
-          result.push(<span key={`part-${index}-start`}>{parts[0]}</span>);
-        }
-        
-        // 빈칸 렌더링 (선택지가 있는 경우 드롭다운, 없는 경우 텍스트 필드)
-        const isCorrect = showResult && currentAnswers[blank.id] === blank.correct_answer;
-        
-        if (blank.options && Array.isArray(blank.options)) {
-          result.push(
-            <FormControl 
-              key={`blank-${index}`} 
-              size="small"
-              error={showResult && !isCorrect}
-              sx={{
-                mx: 1,
-                minWidth: 120,
-                backgroundColor: showResult 
-                  ? isCorrect 
-                    ? 'success.light' 
-                    : 'error.light'
-                  : 'background.paper',
-                '.MuiSelect-select': {
-                  color: showResult ? 'white' : 'inherit',
-                },
-                '.MuiInputBase-root': {
-                  color: showResult ? 'white' : 'inherit',
-                },
-                '.MuiFormHelperText-root': {
-                  color: showResult && !isCorrect ? 'white' : undefined,
-                  backgroundColor: showResult && !isCorrect ? 'rgba(0, 0, 0, 0.2)' : undefined,
-                  padding: showResult && !isCorrect ? '2px 5px' : undefined,
-                  borderRadius: showResult && !isCorrect ? '4px' : undefined,
-                  margin: 0,
-                  marginTop: 1
-                }
-              }}
-            >
-              <Select
-                value={currentAnswers[blank.id] || ''}
-                onChange={(e) => handleAnswerChange(blank.id, e.target.value)}
-                disabled={showResult}
-              >
-                <MenuItem value="" disabled>
-                  <em>선택하세요</em>
-                </MenuItem>
-                {blank.options.map((opt: any) => (
-                  <MenuItem key={opt.id || opt.text} value={opt.text || opt}>
-                    {opt.text || opt}
-                  </MenuItem>
-                ))}
-              </Select>
-              {showResult && !isCorrect && (
-                <FormHelperText>정답: {blank.correct_answer}</FormHelperText>
-              )}
-            </FormControl>
-          );
-        } else {
-          result.push(
-            <TextField
-              key={`blank-${index}`}
-              size="small"
-              variant="outlined"
-              value={currentAnswers[blank.id] || ''}
-              onChange={(e) => handleAnswerChange(blank.id, e.target.value)}
-              disabled={showResult}
-              error={showResult && !isCorrect}
-              helperText={showResult && !isCorrect
-                ? `정답: ${blank.correct_answer}` 
-                : ''}
-              sx={{ 
-                mx: 1, 
-                width: '150px',
-                backgroundColor: showResult 
-                  ? isCorrect 
-                    ? 'success.light' 
-                    : 'error.light'
-                  : 'background.paper',
-                input: {
-                  color: showResult ? 'white' : 'inherit',
-                },
-                '.MuiFormHelperText-root': {
-                  color: showResult && !isCorrect ? 'white' : undefined,
-                  backgroundColor: showResult && !isCorrect ? 'rgba(0, 0, 0, 0.2)' : undefined,
-                  padding: showResult && !isCorrect ? '2px 5px' : undefined,
-                  borderRadius: showResult && !isCorrect ? '4px' : undefined,
-                  margin: 0,
-                  marginTop: 1
-                }
-              }}
-              InputProps={{
-                style: { color: showResult ? 'white' : 'inherit' },
-              }}
-            />
-          );
-        }
-        
-        // 다음 부분을 위해 남은 텍스트 업데이트
-        text = parts[1] || '';
-      });
-      
-      // 남은 텍스트가 있으면 추가
-      if (text) {
-        result.push(<span key="part-end">{text}</span>);
-      }
       
       setProcessedText(result);
     } else {
-      // 빈칸이 없는 경우 그냥 텍스트만 표시
-      setProcessedText([<span key="text">{questionText}</span>]);
+      setProcessedText([<Typography key="question-text" variant="h6">{questionText}</Typography>]);
     }
-  }, [question, currentAnswers, showResult]);
+  }, [question, blanks, currentAnswers, showResult, questionText]);
 
   // 특정 빈칸의 답변 변경 처리
   const handleAnswerChange = (id: string, value: string) => {
     const newAnswers = { ...currentAnswers, [id]: value };
     setCurrentAnswers(newAnswers);
     
-    // 상위 컴포넌트에 변경사항 전달
-    if (Object.keys(newAnswers).length > 1) {
-      onAnswer(newAnswers);
+    if (Object.keys(newAnswers).length === 1) {
+      onAnswer(value);
     } else {
-      onAnswer(value); // 단일 빈칸인 경우 문자열로 전달
+      onAnswer(newAnswers);
     }
+  };
+
+  // 빈칸별 정답 확인
+  const isBlankCorrect = (index: number): boolean => {
+    if (!showResult) return false;
+    
+    const userInput = currentAnswers[String(index)] || '';
+    const correctAnswer = blanks[index]?.correct_answer || 
+                         question.correct_answers?.[index] || 
+                         '';
+                         
+    return userInput.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
   };
 
   return (
     <Box>
       <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.paper' }}>
+        {/* 인라인 빈칸이 있는 문제 */}
         <Typography variant="h6" gutterBottom sx={{ lineHeight: 1.8 }}>
           {processedText}
         </Typography>
+        
+        {/* 인라인 빈칸이 없거나 별도 빈칸 목록이 있는 경우 */}
+        {(!questionText?.includes(BLANK_MARKER) || blanks.length > 0) && (
+          <Box mt={3}>
+            <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+              다음 빈칸을 채워주세요:
+            </Typography>
+            
+            <Grid container spacing={2}>
+              {blanks.map((blank, index) => {
+                const isCorrect = isBlankCorrect(index);
+                
+                return (
+                  <Grid item xs={12} key={`blank-field-${index}`}>
+                    <Paper 
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'flex-start', sm: 'center' },
+                        backgroundColor: showResult
+                          ? isCorrect
+                            ? 'success.light'
+                            : 'error.light'
+                          : 'background.default',
+                      }}
+                    >
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          mr: 2, 
+                          mb: { xs: 1, sm: 0 },
+                          color: showResult ? 'white' : 'inherit',
+                          fontWeight: 'bold',
+                          minWidth: '80px'
+                        }}
+                      >
+                        빈칸 {index + 1}:
+                      </Typography>
+                      
+                      <Box sx={{ flex: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder={`빈칸 ${index + 1}에 들어갈 답을 입력하세요`}
+                          value={currentAnswers[String(index)] || ''}
+                          onChange={(e) => handleAnswerChange(String(index), e.target.value)}
+                          disabled={showResult}
+                          InputProps={{
+                            sx: {
+                              bgcolor: 'background.paper',
+                              color: showResult ? 'white' : 'inherit',
+                            },
+                          }}
+                        />
+                      </Box>
+                      
+                      {showResult && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                          {isCorrect ? (
+                            <CheckCircleOutlineIcon sx={{ color: 'white' }} />
+                          ) : (
+                            <CancelOutlinedIcon sx={{ color: 'white' }} />
+                          )}
+                        </Box>
+                      )}
+                    </Paper>
+                    
+                    {showResult && !isCorrect && (
+                      <Alert severity="info" sx={{ mt: 1 }}>
+                        정답: {blanks[index]?.correct_answer || question.correct_answers?.[index] || ''}
+                      </Alert>
+                    )}
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
+        )}
+        
+        {blanks.length === 0 && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            빈칸이 없는 문제입니다. 문제 데이터를 확인해주세요.
+          </Alert>
+        )}
       </Paper>
     </Box>
   );
