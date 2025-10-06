@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -8,13 +8,18 @@ import {
   ListItemText,
   ListItemIcon,
   IconButton,
-  Divider
-} from '@mui/material';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+  Divider,
+  FormControl,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  Grid,
+} from "@mui/material";
+import DragHandleIcon from "@mui/icons-material/DragHandle";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 
 interface SequenceQuestionProps {
   question: any;
@@ -27,60 +32,89 @@ export default function SequenceQuestion({
   question,
   userAnswer,
   onAnswer,
-  showResult
+  showResult,
 }: SequenceQuestionProps) {
-  const questionText = question.question_text || '';
+  const questionText = question.question_text || "";
   const correctSequence = question.correct_sequence || [];
-  
-  // 항목 배열 가져오기
+
+  // 항목 배열 가져오기 - 수정: items 배열이 없으면 빈 배열로 설정
   const items = question.items || [];
+
+  // 디버깅용 콘솔 출력
+  useEffect(() => {
+    console.log("문제 데이터:", question);
+    console.log("항목:", items);
+  }, [question, items]);
 
   // 현재 순서 상태
   const [sequence, setSequence] = useState<number[]>([]);
+  // 사용자 선택 상태
+  const [selections, setSelections] = useState<{
+    [position: number]: number | null;
+  }>({});
 
-  // 초기 로드 시 항목 섞기
+  // 초기 로드 시 항목 및 선택 상태 초기화
   useEffect(() => {
     if (userAnswer && Array.isArray(userAnswer)) {
       // 이미 답변이 있으면 그대로 사용
       setSequence([...userAnswer]);
+
+      // 선택 상태도 업데이트
+      const initialSelections: { [position: number]: number | null } = {};
+      userAnswer.forEach((itemId, index) => {
+        initialSelections[index] = itemId;
+      });
+      setSelections(initialSelections);
     } else {
-      // 답변이 없으면 무작위로 섞기
-      const shuffled = [...items.map(item => item.id)]
-        .sort(() => Math.random() - 0.5);
-      setSequence(shuffled);
-      onAnswer(shuffled);
+      // 답변이 없으면 초기화
+      // 항목이 있는 경우 항목의 ID 배열 사용, 없으면 빈 배열
+      const itemIds =
+        Array.isArray(items) && items.length > 0
+          ? items.map((item) => item.id)
+          : [];
+
+      setSequence(itemIds);
+
+      // 선택 상태 초기화
+      const initialSelections: { [position: number]: number | null } = {};
+      Array.isArray(items) &&
+        items.forEach((_, index) => {
+          initialSelections[index] = null;
+        });
+      setSelections(initialSelections);
     }
   }, [items, onAnswer, userAnswer]);
 
-  // 항목 이동 처리
-  const moveItem = (fromIndex: number, toIndex: number) => {
-    if (showResult) return; // 결과 표시 모드에서는 이동 불가
-    
-    const newSequence = [...sequence];
-    const [movedItem] = newSequence.splice(fromIndex, 1);
-    newSequence.splice(toIndex, 0, movedItem);
-    
+  // 항목 선택 처리
+  const handleSelection = (position: number, itemId: number) => {
+    if (showResult) return; // 결과 표시 모드에서는 선택 불가
+
+    // 이미 다른 위치에서 선택된 항목이라면 해당 위치의 선택을 해제
+    const newSelections = { ...selections };
+
+    // 같은 항목이 다른 위치에 선택되어 있는지 확인
+    Object.keys(newSelections).forEach((pos) => {
+      if (Number(pos) !== position && newSelections[Number(pos)] === itemId) {
+        newSelections[Number(pos)] = null;
+      }
+    });
+
+    // 현재 위치에 항목 선택
+    newSelections[position] = itemId;
+    setSelections(newSelections);
+
+    // 선택 사항에 따라 순서 업데이트
+    const newSequence = Object.values(newSelections).filter(
+      (item) => item !== null
+    ) as number[];
     setSequence(newSequence);
     onAnswer(newSequence);
   };
 
-  // 항목을 위로 이동
-  const moveUp = (index: number) => {
-    if (index > 0) {
-      moveItem(index, index - 1);
-    }
-  };
-
-  // 항목을 아래로 이동
-  const moveDown = (index: number) => {
-    if (index < sequence.length - 1) {
-      moveItem(index, index + 1);
-    }
-  };
-
   // 현재 시퀀스에서 항목 ID로 항목 객체 찾기
   const getItemById = (id: number) => {
-    return items.find(item => item.id === id) || { id, text: `항목 ${id}` };
+    if (!Array.isArray(items)) return { id, text: `항목 ${id}` };
+    return items.find((item) => item.id === id) || { id, text: `항목 ${id}` };
   };
 
   // 특정 항목이 정답 위치에 있는지 확인
@@ -93,78 +127,144 @@ export default function SequenceQuestion({
     return showResult && correctSequence[index] !== id;
   };
 
+  // 항목이 없으면 안내 메시지 표시
+  if (!Array.isArray(items) || items.length === 0) {
+    return (
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          {questionText}
+        </Typography>
+        <Paper elevation={1} sx={{ mt: 3, p: 2 }}>
+          <Typography variant="body1" color="error">
+            문제의 보기 항목이 없습니다. 문제 데이터를 확인해주세요.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         {questionText}
       </Typography>
 
-      <Paper elevation={1} sx={{ mt: 3 }}>
-        <List sx={{ width: '100%' }}>
-          {sequence.map((id, index) => {
-            const item = getItemById(id);
-            const isCorrect = isCorrectPosition(id, index);
-            const isWrong = isWrongPosition(id, index);
-            
+      <Paper elevation={1} sx={{ mt: 3, p: 2 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          각 위치에 올바른 항목을 선택하세요.
+        </Typography>
+
+        <List sx={{ width: "100%" }}>
+          {items.map((item, position) => {
+            const isCorrect =
+              showResult && correctSequence[position] === selections[position];
+            const isWrong =
+              showResult &&
+              correctSequence[position] !== selections[position] &&
+              selections[position] !== null;
+
             return (
-              <React.Fragment key={id}>
-                {index > 0 && <Divider />}
+              <React.Fragment key={`position-${position}`}>
+                {position > 0 && <Divider />}
                 <ListItem
                   sx={{
                     bgcolor: isCorrect
-                      ? 'success.light'
+                      ? "success.light"
                       : isWrong
-                      ? 'error.light'
-                      : 'background.paper',
+                      ? "error.light"
+                      : "background.paper",
+                    p: 2,
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 'auto', mr: 1 }}>
-                    <DragHandleIcon sx={{ 
-                      color: isCorrect || isWrong ? 'white' : 'inherit' 
-                    }} />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography sx={{ 
-                          color: isCorrect || isWrong ? 'white' : 'inherit'
-                        }}>
-                          {index + 1}. {item.text}
-                        </Typography>
-                        {showResult && isCorrect && (
-                          <CheckCircleOutlineIcon sx={{ ml: 1, color: 'white' }} />
-                        )}
-                        {showResult && isWrong && (
-                          <CancelOutlinedIcon sx={{ ml: 1, color: 'white' }} />
-                        )}
-                      </Box>
-                    }
-                  />
-                  {!showResult && (
-                    <Box>
-                      <IconButton 
-                        onClick={() => moveUp(index)}
-                        disabled={index === 0}
-                        size="small"
+                  <Grid container alignItems="center" spacing={2}>
+                    <Grid item xs={12} md={3}>
+                      <Typography
+                        sx={{
+                          color: isCorrect || isWrong ? "white" : "inherit",
+                          fontWeight: "bold",
+                        }}
                       >
-                        <ArrowUpwardIcon />
-                      </IconButton>
-                      <IconButton 
-                        onClick={() => moveDown(index)}
-                        disabled={index === sequence.length - 1}
-                        size="small"
+                        {position + 1}번째
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} md={8}>
+                      <FormControl component="fieldset" fullWidth>
+                        <RadioGroup
+                          value={selections[position] || ""}
+                          onChange={(e) =>
+                            handleSelection(position, Number(e.target.value))
+                          }
+                        >
+                          <Grid container spacing={1}>
+                            {items.map((option) => (
+                              <Grid
+                                item
+                                xs={12}
+                                md={6}
+                                key={`option-${option.id}-pos-${position}`}
+                              >
+                                <FormControlLabel
+                                  value={option.id}
+                                  control={<Radio disabled={showResult} />}
+                                  label={option.text}
+                                  disabled={
+                                    showResult ||
+                                    (selections[position] !== option.id &&
+                                      Object.values(selections).includes(
+                                        option.id
+                                      ))
+                                  }
+                                  sx={{
+                                    color:
+                                      isCorrect || isWrong
+                                        ? "white"
+                                        : "inherit",
+                                  }}
+                                />
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </RadioGroup>
+                      </FormControl>
+                    </Grid>
+
+                    {showResult && (
+                      <Grid
+                        item
+                        xs={12}
+                        sx={{ mt: 1, display: "flex", alignItems: "center" }}
                       >
-                        <ArrowDownwardIcon />
-                      </IconButton>
-                    </Box>
-                  )}
+                        {isCorrect && (
+                          <>
+                            <CheckCircleOutlineIcon
+                              sx={{ mr: 1, color: "white" }}
+                            />
+                            <Typography color="white">정답입니다!</Typography>
+                          </>
+                        )}
+                        {isWrong && (
+                          <>
+                            <CancelOutlinedIcon
+                              sx={{ mr: 1, color: "white" }}
+                            />
+                            <Typography color="white">
+                              오답입니다. 정답은 "
+                              {getItemById(correctSequence[position]).text}"
+                              입니다.
+                            </Typography>
+                          </>
+                        )}
+                      </Grid>
+                    )}
+                  </Grid>
                 </ListItem>
               </React.Fragment>
             );
           })}
         </List>
       </Paper>
-      
+
       {showResult && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>

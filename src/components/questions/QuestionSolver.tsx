@@ -46,6 +46,16 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
       // questions 배열이 있는 경우
       if (rawData.questions && Array.isArray(rawData.questions)) {
         parsedQuestion.questions = rawData.questions;
+        
+        // 첫 번째 질문의 타입이 있다면 전체 타입으로 사용
+        if (rawData.questions.length > 0 && rawData.questions[0].type) {
+          parsedQuestion.type = rawData.questions[0].type;
+        }
+        
+        // 순서배열형 문제 타입 감지 (correct_sequence가 있으면)
+        if (rawData.questions.length > 0 && rawData.questions[0].correct_sequence) {
+          parsedQuestion.type = 'sequence';
+        }
       } 
       // 단일 문제 형식인 경우
       else {
@@ -53,6 +63,12 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         if (rawData.type) {
           parsedQuestion.type = rawData.type;
         }
+        
+        // 순서배열형 문제 감지 (correct_sequence가 있으면)
+        if (rawData.correct_sequence) {
+          parsedQuestion.type = 'sequence';
+        }
+        
         // 단일 문제를 배열에 추가
         parsedQuestion.questions = [rawData];
       }
@@ -78,8 +94,20 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     
     // 각 문제에 대해 필요한 처리
     data.questions.forEach(question => {
+      // 질문 텍스트 필드 통일
       if (!question.question_text && question.question) {
         question.question_text = question.question;
+      }
+      
+      // 순서배열형 문제 전처리
+      if (data.type === 'sequence' && question.correct_sequence) {
+        // items 배열이 없으면 빈 배열로 초기화
+        if (!question.items || !Array.isArray(question.items)) {
+          question.items = [];
+        }
+        
+        // 디버깅용 로그
+        console.log('순서배열 문제 확인:', question);
       }
     });
   };
@@ -129,7 +157,14 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         if (!Array.isArray(userAnswer) || !Array.isArray(currentQuestion.correct_sequence)) {
           return false;
         }
-        return JSON.stringify(userAnswer) === JSON.stringify(currentQuestion.correct_sequence);
+        
+        // 배열 길이가 다르면 오답
+        if (userAnswer.length !== currentQuestion.correct_sequence.length) {
+          return false;
+        }
+        
+        // 모든 요소가 같은 위치에 있는지 확인
+        return userAnswer.every((val, index) => val === currentQuestion.correct_sequence[index]);
       case 'fill_in_the_blank':
         // 단일 빈칸인 경우
         if (typeof userAnswer === 'string') {
