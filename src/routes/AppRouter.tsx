@@ -5,8 +5,8 @@ import SignupPage from '../pages/SignupPage'
 import LoginPage from '../pages/Login'
 import Home from '../pages/Home'
 import UploadPage from '../pages/UploadPage'
-//import QuestionCreatePage from '../pages/QuestionCreatePage'
 import Mypage from '../pages/Mypage'
+import QuestionSolvePage from '../pages/QuestionSolvePage'
 import PrivateRoute from '../routes/PrivateRoute'
 
 export default function AppRouter() {
@@ -26,19 +26,19 @@ export default function AppRouter() {
           </PrivateRoute>
         }
       />
-      {/* <Route
-        path="/question-create"
-        element={
-          <PrivateRoute>
-            <QuestionCreatePage />
-          </PrivateRoute>
-        }
-      /> */}
       <Route
         path="/mypage"
         element={
           <PrivateRoute>
             <Mypage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/solve-questions"
+        element={
+          <PrivateRoute>
+            <QuestionSolvePage />
           </PrivateRoute>
         }
       />

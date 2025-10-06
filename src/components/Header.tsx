@@ -71,9 +71,17 @@ export default function Header() {
           <Button
             variant="text"
             onClick={() => navigate('/upload')}
-            sx={{ textTransform: 'none', mr: 2,fontSize: '1.3rem' }}
+            sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
           >
             실습하기
+          </Button>
+          {/* 문제 풀기 버튼 추가 */}
+          <Button
+            variant="text"
+            onClick={() => navigate('/solve-questions')}
+            sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+          >
+            문제 풀기
           </Button>
 
           {isLoggedIn ? (
