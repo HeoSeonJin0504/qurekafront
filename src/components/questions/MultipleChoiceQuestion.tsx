@@ -98,19 +98,21 @@ export default function MultipleChoiceQuestion({
                   control={<Radio disabled={showResult} />}
                   label={
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography>
+                      <Typography sx={{ 
+                        color: isCorrect || isWrong ? 'white' : 'inherit'
+                      }}>
                         {option.id}. {option.text}
                       </Typography>
                       {showResult && isCorrect && (
-                        <CheckCircleOutlineIcon color="success" sx={{ ml: 1 }} />
+                        <CheckCircleOutlineIcon sx={{ ml: 1, color: 'white' }} />
                       )}
                       {showResult && isWrong && (
-                        <CancelOutlinedIcon color="error" sx={{ ml: 1 }} />
+                        <CancelOutlinedIcon sx={{ ml: 1, color: 'white' }} />
                       )}
                     </Box>
                   }
                   disabled={showResult}
-                  sx={{ width: '100%' }}
+                  sx={{ width: '100%', color: isCorrect || isWrong ? 'white' : 'inherit' }}
                 />
               </Paper>
             );

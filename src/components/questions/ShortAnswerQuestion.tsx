@@ -76,7 +76,19 @@ export default function ShortAnswerQuestion({
                   ? 'success.light'
                   : 'error.light'
                 : 'background.paper',
+              color: showResult ? 'white' : 'inherit',
+              '& .MuiInputBase-input': {
+                color: showResult ? 'white' : 'inherit',
+              }
             },
+          }}
+          sx={{
+            '.MuiFormHelperText-root': {
+              color: showResult && !isCorrect ? 'white' : undefined,
+              backgroundColor: showResult && !isCorrect ? 'rgba(0, 0, 0, 0.2)' : undefined,
+              padding: showResult && !isCorrect ? '2px 5px' : undefined,
+              borderRadius: showResult && !isCorrect ? '4px' : undefined,
+            }
           }}
         />
       </Paper>

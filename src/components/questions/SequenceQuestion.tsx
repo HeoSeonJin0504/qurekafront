@@ -103,33 +103,39 @@ export default function SequenceQuestion({
         <List sx={{ width: '100%' }}>
           {sequence.map((id, index) => {
             const item = getItemById(id);
+            const isCorrect = isCorrectPosition(id, index);
+            const isWrong = isWrongPosition(id, index);
             
             return (
               <React.Fragment key={id}>
                 {index > 0 && <Divider />}
                 <ListItem
                   sx={{
-                    bgcolor: isCorrectPosition(id, index)
+                    bgcolor: isCorrect
                       ? 'success.light'
-                      : isWrongPosition(id, index)
+                      : isWrong
                       ? 'error.light'
                       : 'background.paper',
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 'auto', mr: 1 }}>
-                    <DragHandleIcon />
+                    <DragHandleIcon sx={{ 
+                      color: isCorrect || isWrong ? 'white' : 'inherit' 
+                    }} />
                   </ListItemIcon>
                   <ListItemText 
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography>
+                        <Typography sx={{ 
+                          color: isCorrect || isWrong ? 'white' : 'inherit'
+                        }}>
                           {index + 1}. {item.text}
                         </Typography>
-                        {showResult && isCorrectPosition(id, index) && (
-                          <CheckCircleOutlineIcon color="success" sx={{ ml: 1 }} />
+                        {showResult && isCorrect && (
+                          <CheckCircleOutlineIcon sx={{ ml: 1, color: 'white' }} />
                         )}
-                        {showResult && isWrongPosition(id, index) && (
-                          <CancelOutlinedIcon color="error" sx={{ ml: 1 }} />
+                        {showResult && isWrong && (
+                          <CancelOutlinedIcon sx={{ ml: 1, color: 'white' }} />
                         )}
                       </Box>
                     }

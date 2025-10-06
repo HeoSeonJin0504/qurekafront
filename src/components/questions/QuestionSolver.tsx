@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Box, Paper, Typography, Button, 
-  Divider, Alert, IconButton, 
-  Collapse, Card, CardContent 
+  Divider, Alert, Card, CardContent,
+  CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { QuestionItem } from '../../types/mypage';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import TrueFalseQuestion from './TrueFalseQuestion';
@@ -30,7 +28,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<any[]>([]);
   const [showResult, setShowResult] = useState(false);
-  const [showExplanation, setShowExplanation] = useState(false);
   const [parsingError, setParsingError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -104,7 +101,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     if (currentQuestionIndex < parsedData!.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setShowResult(false);
-      setShowExplanation(false);
     }
   };
 
@@ -113,7 +109,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       setShowResult(false);
-      setShowExplanation(false);
     }
   };
 
@@ -327,33 +322,23 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
       </Paper>
 
       {showResult && (
-        <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2, bgcolor: isCorrect() ? 'success.light' : 'error.light' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" sx={{ color: isCorrect() ? 'success.dark' : 'error.dark' }}>
-              {isCorrect() ? '정답입니다!' : '오답입니다!'}
-            </Typography>
-            <IconButton onClick={() => setShowExplanation(!showExplanation)}>
-              {showExplanation ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          </Box>
+        <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2, bgcolor: isCorrect() ? 'success.main' : 'error.main' }}>
+          <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+            {isCorrect() ? '정답입니다!' : '오답입니다!'}
+          </Typography>
           
-          <Collapse in={showExplanation}>
-            <Card sx={{ mt: 2, bgcolor: 'background.paper' }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  해설
-                </Typography>
-                <Typography variant="body1">
-                  {currentQuestion.explanation || '이 문제에 대한 해설이 없습니다.'}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Collapse>
+          <Card sx={{ bgcolor: 'background.paper' }}>
+            <CardContent>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                해설
+              </Typography>
+              <Typography variant="body1">
+                {currentQuestion.explanation || '이 문제에 대한 해설이 없습니다.'}
+              </Typography>
+            </CardContent>
+          </Card>
         </Paper>
       )}
     </Box>
   );
 }
-
-// CircularProgress 컴포넌트 추가
-import { CircularProgress } from '@mui/material';

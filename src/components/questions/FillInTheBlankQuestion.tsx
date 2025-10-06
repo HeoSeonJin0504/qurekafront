@@ -68,6 +68,7 @@ export default function FillInTheBlankQuestion({
         result.push(<span key={`part-${index}`}>{part}</span>);
         
         if (index < parts.length - 1) {
+          const isCorrect = showResult && currentAnswers['1'] === (question.correct_answer || '');
           result.push(
             <TextField
               key={`blank-${index}`}
@@ -76,18 +77,24 @@ export default function FillInTheBlankQuestion({
               value={currentAnswers['1'] || ''}
               onChange={(e) => handleAnswerChange('1', e.target.value)}
               disabled={showResult}
-              error={showResult && currentAnswers['1'] !== (question.correct_answer || '')}
-              helperText={showResult && currentAnswers['1'] !== (question.correct_answer || '') 
+              error={showResult && !isCorrect}
+              helperText={showResult && !isCorrect 
                 ? `정답: ${question.correct_answer || ''}` 
                 : ''}
               sx={{ 
                 mx: 1, 
                 width: '150px',
                 backgroundColor: showResult 
-                  ? currentAnswers['1'] === (question.correct_answer || '') 
+                  ? isCorrect 
                     ? 'success.light' 
                     : 'error.light'
                   : 'background.paper',
+                input: {
+                  color: showResult ? 'white' : 'inherit',
+                }
+              }}
+              InputProps={{
+                style: { color: showResult ? 'white' : 'inherit' },
               }}
             />
           );
@@ -116,20 +123,36 @@ export default function FillInTheBlankQuestion({
         }
         
         // 빈칸 렌더링 (선택지가 있는 경우 드롭다운, 없는 경우 텍스트 필드)
+        const isCorrect = showResult && currentAnswers[blank.id] === blank.correct_answer;
+        
         if (blank.options && Array.isArray(blank.options)) {
           result.push(
             <FormControl 
               key={`blank-${index}`} 
               size="small"
-              error={showResult && currentAnswers[blank.id] !== blank.correct_answer}
+              error={showResult && !isCorrect}
               sx={{
                 mx: 1,
                 minWidth: 120,
                 backgroundColor: showResult 
-                  ? currentAnswers[blank.id] === blank.correct_answer 
+                  ? isCorrect 
                     ? 'success.light' 
                     : 'error.light'
                   : 'background.paper',
+                '.MuiSelect-select': {
+                  color: showResult ? 'white' : 'inherit',
+                },
+                '.MuiInputBase-root': {
+                  color: showResult ? 'white' : 'inherit',
+                },
+                '.MuiFormHelperText-root': {
+                  color: showResult && !isCorrect ? 'white' : undefined,
+                  backgroundColor: showResult && !isCorrect ? 'rgba(0, 0, 0, 0.2)' : undefined,
+                  padding: showResult && !isCorrect ? '2px 5px' : undefined,
+                  borderRadius: showResult && !isCorrect ? '4px' : undefined,
+                  margin: 0,
+                  marginTop: 1
+                }
               }}
             >
               <Select
@@ -146,7 +169,7 @@ export default function FillInTheBlankQuestion({
                   </MenuItem>
                 ))}
               </Select>
-              {showResult && currentAnswers[blank.id] !== blank.correct_answer && (
+              {showResult && !isCorrect && (
                 <FormHelperText>정답: {blank.correct_answer}</FormHelperText>
               )}
             </FormControl>
@@ -160,18 +183,32 @@ export default function FillInTheBlankQuestion({
               value={currentAnswers[blank.id] || ''}
               onChange={(e) => handleAnswerChange(blank.id, e.target.value)}
               disabled={showResult}
-              error={showResult && currentAnswers[blank.id] !== blank.correct_answer}
-              helperText={showResult && currentAnswers[blank.id] !== blank.correct_answer 
+              error={showResult && !isCorrect}
+              helperText={showResult && !isCorrect
                 ? `정답: ${blank.correct_answer}` 
                 : ''}
               sx={{ 
                 mx: 1, 
                 width: '150px',
                 backgroundColor: showResult 
-                  ? currentAnswers[blank.id] === blank.correct_answer 
+                  ? isCorrect 
                     ? 'success.light' 
                     : 'error.light'
                   : 'background.paper',
+                input: {
+                  color: showResult ? 'white' : 'inherit',
+                },
+                '.MuiFormHelperText-root': {
+                  color: showResult && !isCorrect ? 'white' : undefined,
+                  backgroundColor: showResult && !isCorrect ? 'rgba(0, 0, 0, 0.2)' : undefined,
+                  padding: showResult && !isCorrect ? '2px 5px' : undefined,
+                  borderRadius: showResult && !isCorrect ? '4px' : undefined,
+                  margin: 0,
+                  marginTop: 1
+                }
+              }}
+              InputProps={{
+                style: { color: showResult ? 'white' : 'inherit' },
               }}
             />
           );
