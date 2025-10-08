@@ -43,6 +43,16 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         questions: []
       };
 
+      // 문제 유형이 displayType에 명시되어 있으면 사용
+      if (questionItem.displayType) {
+        // 서술형 문제 타입 감지 (displayType 기준)
+        if (questionItem.displayType.includes('서술') || 
+            questionItem.displayType.toLowerCase().includes('descriptive')) {
+          parsedQuestion.type = 'descriptive';
+          console.log("서술형 문제가 감지되었습니다 (displayType 기준)");
+        }
+      }
+
       // questions 배열이 있는 경우
       if (rawData.questions && Array.isArray(rawData.questions)) {
         parsedQuestion.questions = rawData.questions;
@@ -56,8 +66,14 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         if (rawData.questions.length > 0) {
           const firstQ = rawData.questions[0];
           
+          // 서술형 문제 감지 (answer_keywords 또는 model_answer가 있으면)
+          if ((firstQ.answer_keywords && Array.isArray(firstQ.answer_keywords)) || 
+              firstQ.model_answer) {
+            parsedQuestion.type = 'descriptive';
+            console.log("서술형 문제가 감지되었습니다");
+          }
           // 순서배열형 문제 감지 (correct_sequence가 있으면)
-          if (firstQ.correct_sequence) {
+          else if (firstQ.correct_sequence) {
             parsedQuestion.type = 'sequence';
           } 
           // 단답형 문제 감지 (correct_answer가 문자열이고 options가 없으면)
@@ -82,8 +98,14 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         }
         
         // 문제 타입 자동 감지
+        // 서술형 문제 감지 (answer_keywords 또는 model_answer가 있으면)
+        if ((rawData.answer_keywords && Array.isArray(rawData.answer_keywords)) || 
+            rawData.model_answer) {
+          parsedQuestion.type = 'descriptive';
+          console.log("서술형 문제가 감지되었습니다 (단일 문제)");
+        }
         // 순서배열형 문제 감지 (correct_sequence가 있으면)
-        if (rawData.correct_sequence) {
+        else if (rawData.correct_sequence) {
           parsedQuestion.type = 'sequence';
         } 
         // 단답형 문제 감지 (correct_answer가 문자열이고 options가 없으면)
@@ -103,17 +125,11 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         parsedQuestion.questions = [rawData];
       }
 
-      // 문제 유형이 지정되어 있지 않고 자동 감지도 실패한 경우 기본값 설정
-      if (!parsedQuestion.type) {
-        // 문제에 options가 있으면 객관식으로 처리
-        if (parsedQuestion.questions[0]?.options && 
-            Array.isArray(parsedQuestion.questions[0].options)) {
-          parsedQuestion.type = 'multiple_choice';
-        } else {
-          // 그 외 경우 단답형으로 처리
-          parsedQuestion.type = 'short_answer';
-        }
-      }
+      // 서술형 문제 강제 변환 (디버깅용 - 필요시 주석 해제)
+      // if (questionItem.name.includes('서술') || questionItem.displayType.includes('서술')) {
+      //   parsedQuestion.type = 'descriptive';
+      //   console.log("서술형 문제로 강제 변환되었습니다");
+      // }
 
       console.log("파싱된 문제 데이터:", parsedQuestion);
       
@@ -196,6 +212,26 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         }
         
         console.log('단답형 문제 확인:', question);
+      }
+      
+      // 서술형 문제 전처리
+      if (data.type === 'descriptive') {
+        // answer_keywords가 없으면 빈 배열로 초기화
+        if (!question.answer_keywords) {
+          question.answer_keywords = [];
+        }
+        
+        // 키워드가 문자열로 되어 있으면 배열로 변환
+        if (typeof question.answer_keywords === 'string') {
+          question.answer_keywords = question.answer_keywords.split(',').map(k => k.trim());
+        }
+        
+        // model_answer가 없으면 빈 문자열로 초기화
+        if (!question.model_answer) {
+          question.model_answer = '';
+        }
+        
+        console.log('서술형 문제 확인:', question);
       }
     });
   };
@@ -299,8 +335,8 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
   const isCheckButtonDisabled = (): boolean => {
     if (userAnswers[currentQuestionIndex] === null) return true;
     
-    // 단답형 문제의 경우 빈 문자열이면 비활성화
-    if (parsedData?.type === 'short_answer' && 
+    // 단답형 또는 서술형 문제의 경우 빈 문자열이면 비활성화
+    if ((parsedData?.type === 'short_answer' || parsedData?.type === 'descriptive') && 
         (userAnswers[currentQuestionIndex] === '' || 
          userAnswers[currentQuestionIndex].trim() === '')) {
       return true;
@@ -342,6 +378,19 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
 
   // 문제 유형에 따른 컴포넌트 렌더링
   const renderQuestionComponent = () => {
+    // 서술형 문제 강제 렌더링 (디버깅용 - 필요시 주석 해제)
+    // if (questionItem.name.includes('서술') || questionItem.displayType.includes('서술')) {
+    //   console.log("서술형 문제 컴포넌트를 강제 렌더링합니다");
+    //   return (
+    //     <DescriptiveQuestion
+    //       question={currentQuestion}
+    //       userAnswer={userAnswers[currentQuestionIndex]}
+    //       onAnswer={handleAnswer}
+    //       showResult={showResult}
+    //     />
+    //   );
+    // }
+    
     const type = parsedData.type.toLowerCase();
     console.log("렌더링할 문제 유형:", type);
     
@@ -392,6 +441,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           />
         );
       case 'descriptive':
+        console.log("서술형 문제 컴포넌트를 렌더링합니다");
         return (
           <DescriptiveQuestion
             question={currentQuestion}
@@ -402,6 +452,22 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         );
       default:
         console.warn("지원되지 않는 문제 유형:", type);
+        
+        // displayType이나 이름에 '서술'이 포함되면 서술형으로 처리
+        if (questionItem.displayType.includes('서술') || 
+            questionItem.name.includes('서술') ||
+            questionItem.displayType.toLowerCase().includes('descriptive')) {
+          console.log("기본값으로 서술형 문제 컴포넌트를 렌더링합니다");
+          return (
+            <DescriptiveQuestion
+              question={currentQuestion}
+              userAnswer={userAnswers[currentQuestionIndex]}
+              onAnswer={handleAnswer}
+              showResult={showResult}
+            />
+          );
+        }
+        
         // 기본값으로 단답형 문제 렌더링
         return (
           <ShortAnswerQuestion
@@ -433,7 +499,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           파일명: {questionItem.name}
         </Typography>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          문제 유형: {questionItem.displayType} (내부 타입: {parsedData.type})
+          문제 유형: {questionItem.displayType}
         </Typography>
         <Divider sx={{ my: 2 }} />
 
