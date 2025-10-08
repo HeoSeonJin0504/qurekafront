@@ -59,8 +59,13 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           // 순서배열형 문제 감지 (correct_sequence가 있으면)
           if (firstQ.correct_sequence) {
             parsedQuestion.type = 'sequence';
+          } 
+          // 단답형 문제 감지 (correct_answer가 문자열이고 options가 없으면)
+          else if (firstQ.correct_answer && 
+                  typeof firstQ.correct_answer === 'string' && 
+                  (!firstQ.options || firstQ.options.length === 0)) {
+            parsedQuestion.type = 'short_answer';
           }
-          
           // 빈칸 채우기형 문제 감지 (blanks가 있거나 문제 텍스트에 ____가 있으면)
           else if (firstQ.blanks || 
                   (firstQ.question_text && firstQ.question_text.includes('____')) ||
@@ -80,6 +85,12 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         // 순서배열형 문제 감지 (correct_sequence가 있으면)
         if (rawData.correct_sequence) {
           parsedQuestion.type = 'sequence';
+        } 
+        // 단답형 문제 감지 (correct_answer가 문자열이고 options가 없으면)
+        else if (rawData.correct_answer && 
+                typeof rawData.correct_answer === 'string' && 
+                (!rawData.options || rawData.options.length === 0)) {
+          parsedQuestion.type = 'short_answer';
         }
         // 빈칸 채우기형 문제 감지
         else if (rawData.blanks || 
@@ -90,6 +101,18 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         
         // 단일 문제를 배열에 추가
         parsedQuestion.questions = [rawData];
+      }
+
+      // 문제 유형이 지정되어 있지 않고 자동 감지도 실패한 경우 기본값 설정
+      if (!parsedQuestion.type) {
+        // 문제에 options가 있으면 객관식으로 처리
+        if (parsedQuestion.questions[0]?.options && 
+            Array.isArray(parsedQuestion.questions[0].options)) {
+          parsedQuestion.type = 'multiple_choice';
+        } else {
+          // 그 외 경우 단답형으로 처리
+          parsedQuestion.type = 'short_answer';
+        }
       }
 
       console.log("파싱된 문제 데이터:", parsedQuestion);
@@ -158,6 +181,21 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         }
         
         console.log('빈칸 채우기 문제 확인:', question);
+      }
+      
+      // 단답형 문제 전처리
+      if (data.type === 'short_answer') {
+        // alternative_answers가 없으면 빈 배열로 초기화
+        if (!question.alternative_answers) {
+          question.alternative_answers = [];
+        }
+        
+        // case_sensitive 필드가 없으면 false로 설정
+        if (question.case_sensitive === undefined) {
+          question.case_sensitive = false;
+        }
+        
+        console.log('단답형 문제 확인:', question);
       }
     });
   };
@@ -257,6 +295,20 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     }
   };
 
+  // 정답 확인 버튼의 활성화 여부 확인
+  const isCheckButtonDisabled = (): boolean => {
+    if (userAnswers[currentQuestionIndex] === null) return true;
+    
+    // 단답형 문제의 경우 빈 문자열이면 비활성화
+    if (parsedData?.type === 'short_answer' && 
+        (userAnswers[currentQuestionIndex] === '' || 
+         userAnswers[currentQuestionIndex].trim() === '')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   if (parsingError) {
     return (
       <Box sx={{ mt: 4 }}>
@@ -291,6 +343,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
   // 문제 유형에 따른 컴포넌트 렌더링
   const renderQuestionComponent = () => {
     const type = parsedData.type.toLowerCase();
+    console.log("렌더링할 문제 유형:", type);
     
     switch (type) {
       case 'multiple_choice':
@@ -348,10 +401,15 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           />
         );
       default:
+        console.warn("지원되지 않는 문제 유형:", type);
+        // 기본값으로 단답형 문제 렌더링
         return (
-          <Alert severity="warning">
-            지원되지 않는 문제 유형입니다: {type}
-          </Alert>
+          <ShortAnswerQuestion
+            question={currentQuestion}
+            userAnswer={userAnswers[currentQuestionIndex]}
+            onAnswer={handleAnswer}
+            showResult={showResult}
+          />
         );
     }
   };
@@ -375,7 +433,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           파일명: {questionItem.name}
         </Typography>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          문제 유형: {questionItem.displayType}
+          문제 유형: {questionItem.displayType} (내부 타입: {parsedData.type})
         </Typography>
         <Divider sx={{ my: 2 }} />
 
@@ -395,7 +453,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
               variant="contained" 
               color="primary" 
               onClick={handleCheckResult}
-              disabled={userAnswers[currentQuestionIndex] === null}
+              disabled={isCheckButtonDisabled()}
             >
               정답 확인
             </Button>
