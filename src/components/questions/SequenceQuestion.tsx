@@ -14,12 +14,14 @@ import {
   Radio,
   FormControlLabel,
   Grid,
+  Button,
 } from "@mui/material";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 interface SequenceQuestionProps {
   question: any;
@@ -111,6 +113,20 @@ export default function SequenceQuestion({
     onAnswer(newSequence);
   };
 
+  // 다시 선택하기 버튼 핸들러
+  const handleReset = () => {
+    if (showResult) return; // 결과 표시 모드에서는 리셋 불가
+
+    // 선택 상태 초기화
+    const initialSelections: { [position: number]: number | null } = {};
+    items.forEach((_, index) => {
+      initialSelections[index] = null;
+    });
+    setSelections(initialSelections);
+    setSequence([]);
+    onAnswer([]);
+  };
+
   // 현재 시퀀스에서 항목 ID로 항목 객체 찾기
   const getItemById = (id: number) => {
     if (!Array.isArray(items)) return { id, text: `항목 ${id}` };
@@ -150,9 +166,29 @@ export default function SequenceQuestion({
       </Typography>
 
       <Paper elevation={1} sx={{ mt: 3, p: 2 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          각 위치에 올바른 항목을 선택하세요.
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Typography variant="subtitle1">
+            각 위치에 올바른 항목을 선택하세요.
+          </Typography>
+          {!showResult && (
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<RestartAltIcon />}
+              onClick={handleReset}
+              disabled={Object.values(selections).every((s) => s === null)}
+            >
+              다시 선택하기
+            </Button>
+          )}
+        </Box>
 
         <List sx={{ width: "100%" }}>
           {items.map((item, position) => {
