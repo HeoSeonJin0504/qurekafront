@@ -1,15 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
-  FormControl,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Paper
+  Paper,
+  Button,
+  Grid,
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 
 interface TrueFalseQuestionProps {
   question: any;
@@ -27,8 +23,59 @@ export default function TrueFalseQuestion({
   const questionText = question.question_text || '';
   const correctAnswer = question.correct_answer;
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onAnswer(event.target.value === 'true');
+  // 컴포넌트 마운트 시 콘솔에 상태 출력 (디버깅용)
+  useEffect(() => {
+    console.log("TrueFalseQuestion 렌더링:", { question, userAnswer, showResult });
+    console.log("correctAnswer 타입:", typeof correctAnswer);
+  }, [question, userAnswer, showResult]);
+
+  const handleButtonClick = (value: boolean) => {
+    console.log("버튼 클릭:", value);
+    if (!showResult) {
+      onAnswer(value);
+    }
+  };
+
+  const getButtonStyle = (value: boolean) => {
+    // 결과를 보여주지 않을 때
+    if (!showResult) {
+      // 선택되지 않았을 때
+      if (userAnswer !== value) {
+        return {
+          bgcolor: 'transparent',
+          color: value ? 'primary.main' : 'error.main',
+          border: 2,
+          borderColor: value ? 'primary.main' : 'error.main',
+        };
+      }
+      // 선택되었을 때
+      return {
+        bgcolor: value ? 'primary.main' : 'error.main',
+        color: 'white',
+      };
+    }
+    
+    // 결과를 보여줄 때
+    if (value === correctAnswer) {
+      return { 
+        bgcolor: 'success.main',
+        color: 'white',
+      };
+    }
+    
+    if (userAnswer === value) {
+      return { 
+        bgcolor: 'error.main',
+        color: 'white',
+      };
+    }
+    
+    return {
+      bgcolor: 'transparent',
+      color: value ? 'primary.main' : 'error.main',
+      border: 2,
+      borderColor: value ? 'primary.main' : 'error.main',
+    };
   };
 
   return (
@@ -37,61 +84,74 @@ export default function TrueFalseQuestion({
         {questionText}
       </Typography>
 
-      <FormControl component="fieldset" fullWidth sx={{ mt: 2 }}>
-        <RadioGroup 
-          value={userAnswer === null ? '' : String(userAnswer)} 
-          onChange={handleChange}
-        >
-          {[
-            { value: 'true', label: '참(True)' },
-            { value: 'false', label: '거짓(False)' }
-          ].map((option) => {
-            const optionValue = option.value === 'true';
-            const isCorrect = showResult && optionValue === correctAnswer;
-            const isWrong = showResult && userAnswer === optionValue && optionValue !== correctAnswer;
-
-            return (
-              <Paper
-                key={option.value}
-                elevation={1}
-                sx={{
-                  mb: 1,
-                  p: 1,
-                  bgcolor: isCorrect 
-                    ? 'success.light' 
-                    : isWrong 
-                      ? 'error.light' 
-                      : 'background.paper',
-                  border: isCorrect || isWrong ? 1 : 0,
-                  borderColor: isCorrect ? 'success.main' : isWrong ? 'error.main' : 'transparent',
-                }}
-              >
-                <FormControlLabel
-                  value={option.value}
-                  control={<Radio disabled={showResult} />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography sx={{ 
-                        color: isCorrect || isWrong ? 'white' : 'inherit'
-                      }}>
-                        {option.label}
-                      </Typography>
-                      {showResult && isCorrect && (
-                        <CheckCircleOutlineIcon sx={{ ml: 1, color: 'white' }} />
-                      )}
-                      {showResult && isWrong && (
-                        <CancelOutlinedIcon sx={{ ml: 1, color: 'white' }} />
-                      )}
-                    </Box>
-                  }
-                  disabled={showResult}
-                  sx={{ width: '100%', color: isCorrect || isWrong ? 'white' : 'inherit' }}
-                />
-              </Paper>
-            );
-          })}
-        </RadioGroup>
-      </FormControl>
+      <Paper elevation={3} sx={{ p: 4, mt: 2, bgcolor: 'background.paper' }}>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+          다음 문장이 참인지 거짓인지 선택하세요:
+        </Typography>
+        
+        <Grid container spacing={4} justifyContent="center" alignItems="center">
+          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+            <Button
+              variant="contained"
+              onClick={() => handleButtonClick(true)}
+              disabled={showResult}
+              sx={{
+                width: { xs: 80, sm: 100 },
+                height: { xs: 80, sm: 100 },
+                borderRadius: '50%',
+                fontSize: { xs: '2rem', sm: '2.5rem' },
+                fontWeight: 'bold',
+                boxShadow: 3,
+                ...getButtonStyle(true),
+              }}
+            >
+              O
+            </Button>
+            <Typography variant="subtitle1" sx={{ mt: 1 }}>참(True)</Typography>
+          </Grid>
+          
+          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+            <Button
+              variant="contained"
+              onClick={() => handleButtonClick(false)}
+              disabled={showResult}
+              sx={{
+                width: { xs: 80, sm: 100 },
+                height: { xs: 80, sm: 100 },
+                borderRadius: '50%',
+                fontSize: { xs: '2rem', sm: '2.5rem' },
+                fontWeight: 'bold',
+                boxShadow: 3,
+                ...getButtonStyle(false),
+              }}
+            >
+              X
+            </Button>
+            <Typography variant="subtitle1" sx={{ mt: 1 }}>거짓(False)</Typography>
+          </Grid>
+        </Grid>
+        
+        {showResult && (
+          <Box sx={{ 
+            mt: 4, 
+            textAlign: 'center', 
+            p: 2, 
+            bgcolor: userAnswer === correctAnswer ? 'success.light' : 'error.light', 
+            borderRadius: 2 
+          }}>
+            <Typography 
+              variant="h6" 
+              color={userAnswer === correctAnswer ? 'success.dark' : 'error.dark'} 
+              fontWeight="bold"
+            >
+              {userAnswer === correctAnswer ? '정답입니다!' : '오답입니다!'}
+            </Typography>
+            <Typography variant="body1" sx={{ mt: 1 }}>
+              정답: {correctAnswer === true ? 'O (참)' : 'X (거짓)'}
+            </Typography>
+          </Box>
+        )}
+      </Paper>
     </Box>
   );
 }
