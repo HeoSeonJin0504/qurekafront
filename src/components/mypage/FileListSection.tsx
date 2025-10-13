@@ -7,7 +7,6 @@ import {
 } from '@mui/material'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
-import { jsPDF } from 'jspdf'
 import { FileItem, QuestionItem } from '../../types/mypage'
 
 const itemsPerPage = 5
@@ -20,10 +19,11 @@ interface FileListSectionProps {
   onPageChange: (e: React.ChangeEvent<unknown>, p: number) => void
   onView: (item: FileItem | QuestionItem) => void
   onDelete?: (item: FileItem | QuestionItem) => void
+  onDownload: (item: FileItem | QuestionItem) => void
 }
 
 export default function FileListSection({
-  title, titleVariant = 'h6', items, currentPage, onPageChange, onView, onDelete
+  title, titleVariant = 'h6', items, currentPage, onPageChange, onView, onDelete, onDownload
 }: FileListSectionProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [activeItem, setActiveItem] = useState<FileItem | QuestionItem | null>(null)
@@ -40,94 +40,11 @@ export default function FileListSection({
     setActiveItem(null);
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!activeItem) return;
     
     try {
-      // 임시 HTML 요소 생성
-      const tempDiv = document.createElement('div');
-      tempDiv.style.padding = '40px';
-      tempDiv.style.width = '595px'; // A4 너비
-      tempDiv.style.fontFamily = 'Arial, sans-serif';
-      tempDiv.style.fontSize = '12px';
-      tempDiv.style.lineHeight = '1.5';
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.backgroundColor = 'white';
-      
-      // 내용 준비
-      let content = '';
-      let fileName = activeItem.name;
-      
-      if (title === "❓ 생성된 문제" && 'type' in activeItem) {
-        try {
-          const questionItem = activeItem as QuestionItem;
-          content += `<h2 style="margin-bottom: 20px;">문제: ${questionItem.text}</h2>`;
-          
-          if (questionItem.options && questionItem.options.length > 0) {
-            content += '<ol style="margin-left: 20px;">';
-            questionItem.options.forEach((opt) => {
-              content += `<li style="margin-bottom: 8px;">${opt}</li>`;
-            });
-            content += '</ol>';
-          }
-          
-          const answer = questionItem.answer ?? 
-            (questionItem.options && 
-             questionItem.correct_option_index !== undefined ? 
-               questionItem.options[questionItem.correct_option_index] : 
-               '없음');
-               
-          content += `<p style="margin-top: 20px;"><strong>정답:</strong> ${answer}</p>`;
-          
-          if (questionItem.explanation) {
-            content += `<p style="margin-top: 10px;"><strong>해설:</strong> ${questionItem.explanation}</p>`;
-          }
-        } catch (error) {
-          console.error('문제 데이터 처리 중 오류:', error);
-          content = `<p>${activeItem.text}</p>`;
-        }
-      } else {
-        // 일반 텍스트 (요약 등)를 위한 처리
-        content = activeItem.text
-          .split('\n')
-          .map(line => `<p style="margin-bottom: 8px;">${line}</p>`)
-          .join('');
-      }
-      
-      tempDiv.innerHTML = content;
-      document.body.appendChild(tempDiv);
-      
-      // html2canvas로 HTML을 이미지로 변환 (동적 import)
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(tempDiv, {
-        scale: 2, // 해상도 향상
-        useCORS: true,
-        logging: false,
-        backgroundColor: 'white'
-      });
-      
-      // 이미지를 PDF로 변환
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4'
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const ratio = pdfWidth / canvas.width;
-      const imgHeight = canvas.height * ratio;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-      
-      // 임시 요소 제거
-      document.body.removeChild(tempDiv);
-      
-      // PDF 저장
-      const filename = `${fileName.replace(/\.(txt|pdf)?$/i, '')}.pdf`;
-      pdf.save(filename);
-      
+      onDownload(activeItem);
       handleMenuClose();
     } catch (error) {
       console.error('다운로드 중 오류:', error);

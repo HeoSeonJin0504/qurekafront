@@ -19,6 +19,7 @@ import { summaryAPI, questionAPI } from "../services/api";
 import { FileItem, QuestionItem } from "../types/mypage";
 import FileListSection from "../components/mypage/FileListSection";
 import QuestionDetailDialog from "../components/mypage/QuestionDetailDialog";
+import { downloadAsPDF } from "../utils/pdfUtils";
 
 export default function Mypage() {
   const { user } = useAuth();
@@ -224,6 +225,30 @@ export default function Mypage() {
       setItemToDelete(null);
     }
   };
+  
+  // PDF 다운로드 함수
+  const handleDownloadPDF = async (item: FileItem | QuestionItem) => {
+    try {
+      if ('rawJson' in item && item.rawJson) {
+        // 문제인 경우 - rawJson을 전달해 JSON 파싱 처리가 이루어지도록 함
+        await downloadAsPDF(
+          item.rawJson,
+          item.name || 'question',
+          (item as QuestionItem).displayType || '문제'
+        );
+      } else {
+        // 요약인 경우
+        await downloadAsPDF(
+          item.text,
+          item.name || 'summary',
+          (item as FileItem).summaryType || '요약'
+        );
+      }
+    } catch (error) {
+      console.error('PDF 다운로드 오류:', error);
+      alert('PDF 다운로드 중 오류가 발생했습니다.');
+    }
+  };
 
   if (loading)
     return (
@@ -289,6 +314,7 @@ export default function Mypage() {
           onPageChange={(_, p) => setSummaryPage(p)}
           onView={handleOpenDialog}
           onDelete={(item) => handleDeleteConfirm(item.id, "summary")}
+          onDownload={handleDownloadPDF}
         />
 
         <FileListSection
@@ -299,6 +325,7 @@ export default function Mypage() {
           onPageChange={(_, p) => setQuestionPage(p)}
           onView={handleOpenDialog}
           onDelete={(item) => handleDeleteConfirm(item.id, "question")}
+          onDownload={handleDownloadPDF}
         />
       </Box>
 
@@ -309,6 +336,7 @@ export default function Mypage() {
         item={activeViewItem}
         dialogTitle={dialogTitle}
         dialogText={dialogText}
+        onDownload={handleDownloadPDF}
       />
 
       {/* 삭제 확인 다이얼로그 */}
@@ -317,7 +345,7 @@ export default function Mypage() {
         onClose={() => setDeleteConfirmOpen(false)}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
-        disableRestoreFocus // 다이얼로그 닫을 때 이전 요소로 포커스 복원 방지
+        disableRestoreFocus
       >
         <DialogTitle id="alert-dialog-title">삭제 확인</DialogTitle>
         <DialogContent>
@@ -334,7 +362,7 @@ export default function Mypage() {
           <Button
             onClick={handleDeleteConfirmed}
             color="error"
-            autoFocus // 이 버튼에 자동 포커스 (이미 있음)
+            autoFocus
           >
             삭제
           </Button>
