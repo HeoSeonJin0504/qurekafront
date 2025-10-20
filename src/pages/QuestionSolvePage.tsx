@@ -5,13 +5,21 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  Divider
+  Divider,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Chip,
+  Pagination
 } from '@mui/material';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { questionAPI } from '../services/api';
 import { QuestionItem } from '../types/mypage';
-import FileListSection from '../components/mypage/FileListSection';
 import QuestionSolver from '../components/questions/QuestionSolver';
 
 export default function QuestionSolvePage() {
@@ -167,14 +175,61 @@ export default function QuestionSolvePage() {
               </Typography>
             </Paper>
 
-            <FileListSection
-              title="❓ 내 문제 모음"
-              titleVariant="h4"
-              items={questionItems}
-              currentPage={questionPage}
-              onPageChange={(_, p) => setQuestionPage(p)}
-              onView={handleQuestionSelect}
-            />
+            <Box mb={6}>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>❓ 내 문제 모음</Typography>
+              <TableContainer component={Paper}>
+                <Table size="medium">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>이름</TableCell>
+                      <TableCell align="center">생성 날짜</TableCell>
+                      <TableCell align="center">유형</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {questionItems.slice((questionPage - 1) * 5, questionPage * 5).map(item => (
+                      <TableRow key={item.id} hover onClick={() => handleQuestionSelect(item)} sx={{ cursor: 'pointer' }}>
+                        <TableCell>
+                          <Box sx={{ display:'flex', alignItems:'center' }}>
+                            <PictureAsPdfIcon color="error" sx={{ mr:1 }} />
+                            <Typography noWrap>{item.name}</Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">{item.createdAt}</TableCell>
+                        <TableCell align="center">
+                          <Chip 
+                            label={item.displayType || '기타'} 
+                            size="small" 
+                            color="secondary" 
+                            variant="outlined" 
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {questionItems.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
+                          <Typography color="text.secondary">저장된 항목이 없습니다.</Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              {Math.ceil(questionItems.length / 5) > 0 && (
+                <Box display="flex" justifyContent="center" mt={2}>
+                  <Pagination 
+                    count={Math.ceil(questionItems.length / 5)} 
+                    page={questionPage}
+                    onChange={(_, p) => setQuestionPage(p)}
+                    color="primary"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+            </Box>
           </>
         ) : (
           selectedQuestion && (
