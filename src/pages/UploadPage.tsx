@@ -797,6 +797,9 @@ export default function UploadPage() {
                 {summaryText || "먼저 요약을 생성해 주세요."}
               </Typography>
             </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenSummaryDialog(false)}>닫기</Button>
+            </DialogActions>
           </Dialog>
 
           {/* 저장된 요약 목록 다이얼로그 */}
