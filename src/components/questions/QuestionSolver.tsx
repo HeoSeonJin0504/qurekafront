@@ -207,7 +207,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
       // 각 문제 전처리
       parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
 
-      console.log("파싱된 문제 데이터:", parsedQuestion);
       
       setParsedData(parsedQuestion);
       setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
@@ -278,7 +277,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     if (!parsedData || !currentQuestion) return null;
 
     const type = parsedData.type.toLowerCase();
-    console.log("렌더링할 문제 유형:", type);
     
     const commonProps = {
       question: currentQuestion,
@@ -304,7 +302,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     if (questionItem.displayType.includes('서술') || 
         questionItem.name.includes('서술') ||
         questionItem.displayType.toLowerCase().includes('descriptive')) {
-      console.log("기본값으로 서술형 문제 컴포넌트를 렌더링합니다");
       return <DescriptiveQuestion {...commonProps} />;
     }
 
