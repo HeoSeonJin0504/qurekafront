@@ -726,7 +726,7 @@ export default function UploadPage() {
                         size="small"
                         onClick={handleDownloadQuestion}
                       >
-                        ⬇️ 다운로드
+                        📄 PDF 다운로드
                       </Button>
                     </Box>
 
