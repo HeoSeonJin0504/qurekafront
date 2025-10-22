@@ -158,7 +158,7 @@ export default function FileListSection({
           e.stopPropagation();
           handleDownload();
         }}>
-          다운로드
+          PDF 다운로드
         </MenuItem>
         
         {onDelete && activeItem && (
