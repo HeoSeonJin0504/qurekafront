@@ -20,6 +20,7 @@ import { FileItem, QuestionItem } from "../types/mypage";
 import FileListSection from "../components/mypage/FileListSection";
 import QuestionDetailDialog from "../components/mypage/QuestionDetailDialog";
 import { downloadAsPDF } from "../utils/pdfUtils";
+import PageNavigator from "../components/common/PageNavigator"; // 추가 임포트
 
 export default function Mypage() {
   const { user } = useAuth();
@@ -49,6 +50,8 @@ export default function Mypage() {
     message: "",
     severity: "success",
   });
+  // PDF 다운로드 상태 추가
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // 폰트 로드
   useEffect(() => {
@@ -225,10 +228,7 @@ export default function Mypage() {
       setItemToDelete(null);
     }
   };
-  
-  // PDF 다운로드 상태 추가
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  
+
   // PDF 다운로드 함수
   const handleDownloadPDF = async (item: FileItem | QuestionItem) => {
     try {
@@ -272,6 +272,8 @@ export default function Mypage() {
   return (
     <Box sx={{ bgcolor: "background.paper", minHeight: "100vh", position: "relative" }}>
       <Header />
+      {/* PageNavigator 컴포넌트 추가 */}
+      <PageNavigator />
       
       {/* PDF 다운로드 중 로딩 오버레이 */}
       {downloadingPdf && (

@@ -20,8 +20,10 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { CloudUpload } from "@mui/icons-material";
+import { CloudUpload, GetApp } from "@mui/icons-material";
 import Header from "../components/Header";
+// 추가 임포트
+import PageNavigator from "../components/common/PageNavigator";
 import SummarySettings from "../components/upload/SummarySettings";
 import ProblemSettings from "../components/upload/ProblemSettings";
 import QuestionRenderer from "../components/upload/QuestionRenderer";
@@ -360,6 +362,8 @@ export default function UploadPage() {
   return (
     <>
       <Header />
+      {/* PageNavigator 컴포넌트 추가 */}
+      <PageNavigator />
 
       <Box
         sx={{
@@ -615,7 +619,7 @@ export default function UploadPage() {
                         onClick={() => navigateWithScrollReset("/")}
                         sx={{ borderRadius: 2.5, px: 3 }}
                       >
-                        🏠 홈으로
+                        홈으로
                       </Button>
                       <Button
                         variant="outlined"
@@ -623,7 +627,7 @@ export default function UploadPage() {
                         onClick={() => navigateWithScrollReset("/mypage")}
                         sx={{ borderRadius: 2.5, px: 3 }}
                       >
-                        👤 마이페이지
+                        마이페이지
                       </Button>
                     </Stack>
                   </Stack>

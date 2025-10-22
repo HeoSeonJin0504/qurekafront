@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { questionAPI } from '../services/api';
 import { QuestionItem } from '../types/mypage';
 import QuestionSolver from '../components/questions/QuestionSolver';
+import PageNavigator from '../components/common/PageNavigator';
 
 export default function QuestionSolvePage() {
   const { user } = useAuth();
@@ -134,6 +135,7 @@ export default function QuestionSolvePage() {
   return (
     <Box sx={{ bgcolor: "background.paper", minHeight: "100vh" }}>
       <Header />
+      <PageNavigator />
       <Box sx={{ pt: "60px", px: 4, pb: 6, maxWidth: 1200, mx: "auto" }}>
         {!solveMode ? (
           <>

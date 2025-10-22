@@ -3,6 +3,7 @@ import { Container, Button, Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
+import PageNavigator from "../components/common/PageNavigator";
 
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -138,6 +139,7 @@ function Home() {
       {/* 수정된 Hero Section - 텍스트 왼쪽, 이미지 오른쪽 */}
       <HeroSection>
         <Header />
+        <PageNavigator />
         <Container
           maxWidth="lg"
           sx={{
