@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  Typography, Box
+  Typography, Box, CircularProgress
 } from '@mui/material'
 import { FileItem, QuestionItem } from '../../types/mypage'
 import { DownloadTxtButton } from '../DownloadTxtButton'
@@ -23,6 +23,8 @@ export default function QuestionDetailDialog({
   const [parsedQuestions, setParsedQuestions] = useState<Question[]>([])
   const [isJsonFormat, setIsJsonFormat] = useState(false)
   const [formattedText, setFormattedText] = useState<string>('')
+  // PDF 다운로드 상태
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     // 다이얼로그가 열릴 때 JSON 파싱 시도
@@ -123,7 +125,10 @@ export default function QuestionDetailDialog({
 
   const handleDownloadPDF = () => {
     if (!item) return;
-    onDownload(item);
+    setDownloadingPdf(true); // 다운로드 시작
+    onDownload(item).finally(() => {
+      setDownloadingPdf(false); // 다운로드 완료
+    });
   };
 
   if (!item) return null
@@ -137,6 +142,28 @@ export default function QuestionDetailDialog({
       scroll="paper"
       aria-labelledby="dialog-title"
     >
+      {/* PDF 다운로드 중 로딩 표시 */}
+      {downloadingPdf && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            zIndex: 2000,
+          }}
+        >
+          <CircularProgress size={40} />
+          <Typography variant="body1" sx={{ mt: 2 }}>PDF 생성 중...</Typography>
+        </Box>
+      )}
+      
       <DialogTitle id="dialog-title">
         {dialogTitle || '상세 보기'}
         {item && (

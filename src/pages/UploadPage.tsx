@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import { CloudUpload } from "@mui/icons-material";
 import Header from "../components/Header";
@@ -98,6 +99,9 @@ export default function UploadPage() {
   const [openSavedSummariesDialog, setOpenSavedSummariesDialog] = useState(false);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [selectedSummary, setSelectedSummary] = useState<SummaryItem | null>(null);
+
+  // PDF 다운로드 관련 상태 추가
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     // jsPDF 폰트 로드를 조건부로 처리
@@ -281,6 +285,7 @@ export default function UploadPage() {
 
   const handleDownloadSummary = async () => {
     try {
+      setDownloadingPdf(true);
       await downloadAsPDF(
         summaryText,
         fileName || "result",
@@ -288,11 +293,14 @@ export default function UploadPage() {
       );
     } catch (error) {
       alert("PDF 다운로드 중 오류가 발생했습니다.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
   const handleDownloadQuestion = async () => {
     try {
+      setDownloadingPdf(true);
       await downloadAsPDF(
         questionText,
         fileName || "result",
@@ -300,6 +308,8 @@ export default function UploadPage() {
       );
     } catch (error) {
       alert("PDF 다운로드 중 오류가 발생했습니다.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -352,8 +362,36 @@ export default function UploadPage() {
             theme.palette.mode === "light"
               ? "linear-gradient(145deg, #ffffff 0%, #f4f7fa 100%)"
               : "linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%)",
+          position: "relative", // 로딩 오버레이를 위해 추가
         }}
       >
+        {/* PDF 다운로드 중 로딩 오버레이 */}
+        {downloadingPdf && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              zIndex: 1500,
+            }}
+          >
+            <CircularProgress size={60} />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              PDF 생성 중...
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              잠시만 기다려 주세요
+            </Typography>
+          </Box>
+        )}
+        
         <Container maxWidth="md">
           <Typography variant="h1" fontWeight="500" align="center" mb={3}>
             문서 업로드

@@ -226,9 +226,13 @@ export default function Mypage() {
     }
   };
   
+  // PDF 다운로드 상태 추가
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  
   // PDF 다운로드 함수
   const handleDownloadPDF = async (item: FileItem | QuestionItem) => {
     try {
+      setDownloadingPdf(true); // 다운로드 시작
       if ('rawJson' in item && item.rawJson) {
         // 문제인 경우 - rawJson을 전달해 JSON 파싱 처리가 이루어지도록 함
         await downloadAsPDF(
@@ -247,6 +251,8 @@ export default function Mypage() {
     } catch (error) {
       console.error('PDF 다운로드 오류:', error);
       alert('PDF 다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setDownloadingPdf(false); // 다운로드 완료
     }
   };
 
@@ -264,8 +270,36 @@ export default function Mypage() {
     );
 
   return (
-    <Box sx={{ bgcolor: "background.paper", minHeight: "100vh" }}>
+    <Box sx={{ bgcolor: "background.paper", minHeight: "100vh", position: "relative" }}>
       <Header />
+      
+      {/* PDF 다운로드 중 로딩 오버레이 */}
+      {downloadingPdf && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            zIndex: 1500,
+          }}
+        >
+          <CircularProgress size={60} />
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            PDF 생성 중...
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            잠시만 기다려 주세요
+          </Typography>
+        </Box>
+      )}
+      
       <Box sx={{ pt: "60px", px: 4, pb: 6, maxWidth: 1200, mx: "auto" }}>
         <Typography
           variant="h2"
