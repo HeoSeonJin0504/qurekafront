@@ -48,9 +48,11 @@ import {
 import { jsPDF } from "jspdf";
 import SavedSummaryDialog from "../components/upload/SavedSummaryDialog";
 import { SummaryItem } from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 export default function UploadPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // common state
   const [mainTab, setMainTab] = useState<MainTab>("summary");
@@ -349,6 +351,12 @@ export default function UploadPage() {
     setOpenConfirmDialog(false);
   };
 
+  // 이동 시 스크롤을 상단으로 올리는 함수
+  const navigateWithScrollReset = (path: string) => {
+    navigate(path);
+    window.scrollTo(0, 0);
+  };
+
   return (
     <>
       <Header />
@@ -601,6 +609,22 @@ export default function UploadPage() {
                       >
                         🎯 문제 생성
                       </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => navigateWithScrollReset("/")}
+                        sx={{ borderRadius: 2.5, px: 3 }}
+                      >
+                        🏠 홈으로
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        onClick={() => navigateWithScrollReset("/mypage")}
+                        sx={{ borderRadius: 2.5, px: 3 }}
+                      >
+                        👤 마이페이지
+                      </Button>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -780,13 +804,34 @@ export default function UploadPage() {
                       </Typography>
                     )}
 
-                    <Stack direction="row" justifyContent="center" spacing={2}>
+                    <Stack 
+                      direction={{ xs: "column", sm: "row" }} 
+                      justifyContent="center" 
+                      spacing={2}
+                      sx={{ flexWrap: { sm: "wrap" }, gap: { sm: 1 } }}
+                    >
                       <Button
                         variant="outlined"
                         onClick={handleSaveQuestion}
                         sx={{ borderRadius: 2.5, px: 3 }}
                       >
                         💾 문제 저장
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => navigateWithScrollReset("/")}
+                        sx={{ borderRadius: 2.5, px: 3 }}
+                      >
+                        🏠 홈으로
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        onClick={() => navigateWithScrollReset("/mypage")}
+                        sx={{ borderRadius: 2.5, px: 3 }}
+                      >
+                        👤 마이페이지
                       </Button>
                     </Stack>
                   </Stack>
