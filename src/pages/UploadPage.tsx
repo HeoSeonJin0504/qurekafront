@@ -20,7 +20,7 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { CloudUpload, Home, History } from "@mui/icons-material";
+import { CloudUpload } from "@mui/icons-material";
 import Header from "../components/Header";
 import SummarySettings from "../components/upload/SummarySettings";
 import ProblemSettings from "../components/upload/ProblemSettings";
@@ -48,11 +48,9 @@ import {
 import { jsPDF } from "jspdf";
 import SavedSummaryDialog from "../components/upload/SavedSummaryDialog";
 import { SummaryItem } from "../services/api";
-import { useNavigate } from "react-router-dom";
 
 export default function UploadPage() {
   const { user } = useAuth();
-  const navigate = useNavigate(); // 추가: 페이지 이동을 위한 훅
 
   // common state
   const [mainTab, setMainTab] = useState<MainTab>("summary");
@@ -349,17 +347,6 @@ export default function UploadPage() {
       applySavedSummary(selectedSummary);
     }
     setOpenConfirmDialog(false);
-  };
-
-  // 페이지 이동 핸들러 추가
-  const handleNavigateHome = () => {
-    window.scrollTo(0, 0); // 페이지 상단으로 스크롤
-    navigate('/');
-  };
-
-  const handleNavigateToSavedQuestions = () => {
-    window.scrollTo(0, 0); // 페이지 상단으로 스크롤
-    navigate('/mypage'); // /history/question에서 /mypage로 변경
   };
 
   return (
@@ -800,22 +787,6 @@ export default function UploadPage() {
                         sx={{ borderRadius: 2.5, px: 3 }}
                       >
                         💾 문제 저장
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={handleNavigateToSavedQuestions}
-                        startIcon={<History />}
-                        sx={{ borderRadius: 2.5, px: 3 }}
-                      >
-                        저장된 파일 보기
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={handleNavigateHome}
-                        startIcon={<Home />}
-                        sx={{ borderRadius: 2.5, px: 3 }}
-                      >
-                        홈으로 이동하기
                       </Button>
                     </Stack>
                   </Stack>
