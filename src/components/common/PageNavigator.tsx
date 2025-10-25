@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Fab, Zoom, Tooltip, Divider, useMediaQuery, useTheme } from '@mui/material';
-import { KeyboardArrowUp, Home, CloudUpload, Person, QuestionAnswer } from '@mui/icons-material';
+import { KeyboardArrowUp, Home, Create, Person, LiveHelp } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -145,7 +145,7 @@ const PageNavigator: React.FC<PageNavigatorProps> = ({ additionalButtons }) => {
                 '&:hover': { opacity: 1 }
               }}
             >
-              <CloudUpload />
+              <Create />
             </Fab>
           </Tooltip>
 
@@ -175,7 +175,7 @@ const PageNavigator: React.FC<PageNavigatorProps> = ({ additionalButtons }) => {
                 '&:hover': { opacity: 1 }
               }}
             >
-              <QuestionAnswer />
+              <LiveHelp />
             </Fab>
           </Tooltip>
         </>
