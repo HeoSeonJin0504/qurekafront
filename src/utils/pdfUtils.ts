@@ -335,6 +335,7 @@ export const downloadAsPDF = async (
     
     // 타입에서 특수문자 제거 및 길이 제한  
     const safeType = (type || '')
+      .replace(/\.[^.]*$/, '') // 확장자 제거
       .replace(/[^\w\s가-힣]/g, '_')
       .substring(0, 20);
     
