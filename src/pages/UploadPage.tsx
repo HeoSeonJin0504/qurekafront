@@ -50,11 +50,9 @@ import {
 import { jsPDF } from "jspdf";
 import SavedSummaryDialog from "../components/upload/SavedSummaryDialog";
 import { SummaryItem } from "../services/api";
-import { useNavigate } from "react-router-dom";
 
 export default function UploadPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   // common state
   const [mainTab, setMainTab] = useState<MainTab>("summary");
@@ -353,12 +351,6 @@ export default function UploadPage() {
     setOpenConfirmDialog(false);
   };
 
-  // 이동 시 스크롤을 상단으로 올리는 함수
-  const navigateWithScrollReset = (path: string) => {
-    navigate(path);
-    window.scrollTo(0, 0);
-  };
-
   return (
     <>
       <Header />
@@ -613,22 +605,6 @@ export default function UploadPage() {
                       >
                         🎯 문제 생성
                       </Button>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => navigateWithScrollReset("/")}
-                        sx={{ borderRadius: 2.5, px: 3 }}
-                      >
-                        홈으로
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="info"
-                        onClick={() => navigateWithScrollReset("/mypage")}
-                        sx={{ borderRadius: 2.5, px: 3 }}
-                      >
-                        마이페이지
-                      </Button>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -809,10 +785,10 @@ export default function UploadPage() {
                     )}
 
                     <Stack 
-                      direction={{ xs: "column", sm: "row" }} 
+                      direction="row"
                       justifyContent="center" 
                       spacing={2}
-                      sx={{ flexWrap: { sm: "wrap" }, gap: { sm: 1 } }}
+                      sx={{ pt: 1 }}
                     >
                       <Button
                         variant="outlined"
@@ -820,22 +796,6 @@ export default function UploadPage() {
                         sx={{ borderRadius: 2.5, px: 3 }}
                       >
                         💾 문제 저장
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => navigateWithScrollReset("/")}
-                        sx={{ borderRadius: 2.5, px: 3 }}
-                      >
-                        🏠 홈으로
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="info"
-                        onClick={() => navigateWithScrollReset("/mypage")}
-                        sx={{ borderRadius: 2.5, px: 3 }}
-                      >
-                        👤 마이페이지
                       </Button>
                     </Stack>
                   </Stack>
@@ -901,7 +861,7 @@ export default function UploadPage() {
             <DialogTitle>요약본 변경 확인</DialogTitle>
             <DialogContent>
               <Typography>
-                현재 작성된 요약본이 있습니다. 저장된 요약본으로 변경하시겠습니까?
+                현재 생성된 요약본이 있습니다. 저장된 요약본으로 변경하시겠습니까?
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                 변경하면 현재 작성된 요약본은 사라집니다.
