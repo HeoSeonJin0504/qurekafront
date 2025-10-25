@@ -213,16 +213,27 @@ export default function UploadPage() {
     try {
       const data = JSON.parse(jsonText);
       if (data.questions && Array.isArray(data.questions)) {
+        if (data.questions.length === 0) {
+          alert('문제가 생성되지 않았습니다.\n다시 한 번 시도해주세요.');
+          setIsJsonFormat(false);
+          setParsedQuestions([]);
+          return false;
+        }
         setParsedQuestions(data.questions);
         setIsJsonFormat(true);
         return true;
+      } else {
+        console.warn('JSON 형식이지만 questions 배열이 없습니다.');
+        setIsJsonFormat(false);
+        setParsedQuestions([]);
+        return false;
       }
     } catch (error) {
       console.error("JSON 파싱 오류:", error);
+      setIsJsonFormat(false);
+      setParsedQuestions([]);
+      return false;
     }
-    setIsJsonFormat(false);
-    setParsedQuestions([]);
-    return false;
   };
 
   const handleGenerateQuestion = async () => {

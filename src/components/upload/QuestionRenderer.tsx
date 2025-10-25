@@ -7,6 +7,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Alert,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Question } from '../../types/upload'
@@ -229,33 +230,78 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
   )
 
   const renderQuestion = (question: Question, index: number) => {
-    // n지 선다형
-    if (question.options && question.correct_answer && typeof question.correct_answer === 'string') {
-      return renderMultipleChoice(question, index)
+    try {
+      // 기본 검증: question_text가 없으면 오류
+      if (!question.question_text) {
+        throw new Error('문제 내용을 찾을 수 없습니다.');
+      }
+
+      // n지 선다형
+      if (question.options && question.correct_answer && typeof question.correct_answer === 'string') {
+        if (!Array.isArray(question.options) || question.options.length === 0) {
+          throw new Error('문제 생성 중 오류가 발생했습니다.');
+        }
+        return renderMultipleChoice(question, index)
+      }
+      // 순서 배열형
+      if (question.items && question.correct_sequence) {
+        if (!Array.isArray(question.items) || !Array.isArray(question.correct_sequence)) {
+          throw new Error('문제 생성 중 오류가 발생했습니다.');
+        }
+        return renderSequence(question, index)
+      }
+      // 참거짓형
+      if (typeof question.correct_answer === 'boolean') {
+        return renderTrueFalse(question, index)
+      }
+      // 빈칸 채우기형
+      if (question.blanks) {
+        if (!Array.isArray(question.blanks) || question.blanks.length === 0) {
+          throw new Error('문제 생성 중 오류가 발생했습니다.');
+        }
+        return renderFillInTheBlank(question, index)
+      }
+      // 서술형
+      if (question.answer_keywords || question.model_answer) {
+        return renderDescriptive(question, index)
+      }
+      // 단답형 (기본)
+      if (question.correct_answer) {
+        return renderShortAnswer(question, index)
+      }
+
+      // 어떤 형식에도 해당하지 않는 경우
+      throw new Error('문제 생성 중 오류가 발생했습니다.');
+    } catch (error) {
+      console.error(`문제 ${index + 1} 렌더링 오류:`, error);
+      return (
+        <Card key={index} sx={{ mb: 3, p: 3, borderRadius: 2, boxShadow: 2, bgcolor: '#fff5f5' }}>
+          <Alert severity="error" sx={{ borderRadius: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+              ⚠️ 문제 {index + 1}번을 불러올 수 없습니다
+            </Typography>
+            <Typography variant="body2">
+              문제 생성 중 오류가 발생했습니다.<br />
+              '문제 생성' 버튼을 다시 눌러주세요.
+            </Typography>
+          </Alert>
+        </Card>
+      );
     }
-    // 순서 배열형
-    if (question.items && question.correct_sequence) {
-      return renderSequence(question, index)
-    }
-    // 참거짓형
-    if (typeof question.correct_answer === 'boolean') {
-      return renderTrueFalse(question, index)
-    }
-    // 빈칸 채우기형
-    if (question.blanks) {
-      return renderFillInTheBlank(question, index)
-    }
-    // 서술형
-    if (question.answer_keywords || question.model_answer) {
-      return renderDescriptive(question, index)
-    }
-    // 단답형 (기본)
-    return renderShortAnswer(question, index)
   }
 
   return (
     <Box>
-      {questions.map((question, index) => renderQuestion(question, index))}
+      {questions.length === 0 ? (
+        <Alert severity="warning" sx={{ borderRadius: 2 }}>
+          <Typography variant="body1">
+            생성된 문제가 없습니다.<br />
+            '문제 생성' 버튼을 눌러 문제를 만들어주세요.
+          </Typography>
+        </Alert>
+      ) : (
+        questions.map((question, index) => renderQuestion(question, index))
+      )}
     </Box>
   )
 }
