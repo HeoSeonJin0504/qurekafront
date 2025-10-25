@@ -71,6 +71,7 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
   const filteredSummaries = summaries.filter((summary) => {
     return (
       summary.file_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      summary.summary_name.toLowerCase().includes(searchQuery.toLowerCase()) ||  // 추가
       summary.summary_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
       summary.summary_text.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -115,7 +116,8 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>파일명</TableCell>
+                  <TableCell>요약본 이름</TableCell>
+                  <TableCell>파일 이름</TableCell>
                   <TableCell align="center">유형</TableCell>
                   <TableCell align="center">생성일</TableCell>
                 </TableRow>
@@ -132,8 +134,15 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <PictureAsPdfIcon color="error" sx={{ mr: 1 }} />
-                        <Typography noWrap>{summary.file_name}</Typography>
+                        <Typography noWrap fontWeight="medium">
+                          {summary.summary_name}
+                        </Typography>
                       </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography noWrap variant="body2" color="text.secondary">
+                        {summary.file_name}
+                      </Typography>
                     </TableCell>
                     <TableCell align="center">
                       <Chip
@@ -144,7 +153,9 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
                       />
                     </TableCell>
                     <TableCell align="center">
-                      {new Date(summary.created_at).toLocaleString('ko-KR')}
+                      <Typography variant="body2">
+                        {new Date(summary.created_at).toLocaleString('ko-KR')}
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -157,6 +168,9 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
           <Box mt={2} p={2} bgcolor="background.default" borderRadius={1}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               선택된 요약 미리보기:
+            </Typography>
+            <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+              📌 {selectedSummary.summary_name}
             </Typography>
             <Typography
               variant="body2"

@@ -36,21 +36,21 @@ export default function FileListSection({
   }
   
   const handleMenuClose = () => {
-    setAnchorEl(null);
-    setActiveItem(null);
-  };
+    setAnchorEl(null)
+    setActiveItem(null)
+  }
 
   const handleDownload = () => {
-    if (!activeItem) return;
+    if (!activeItem) return
     
     try {
-      onDownload(activeItem);
-      handleMenuClose();
+      onDownload(activeItem)
+      handleMenuClose()
     } catch (error) {
-      console.error('다운로드 중 오류:', error);
-      alert('다운로드 중 오류가 발생했습니다.');
+      console.error('다운로드 중 오류:', error)
+      alert('다운로드 중 오류가 발생했습니다.')
     }
-  };
+  }
 
   const start = (currentPage - 1) * itemsPerPage
   const pageItems = items.slice(start, start + itemsPerPage)
@@ -63,7 +63,8 @@ export default function FileListSection({
         <Table size="medium">
           <TableHead>
             <TableRow>
-              <TableCell>이름</TableCell>
+              <TableCell>{title.includes('요약') ? '요약본 이름' : '문제 이름'}</TableCell>
+              <TableCell>파일 이름</TableCell>
               <TableCell align="center">생성 날짜</TableCell>
               <TableCell align="center">유형</TableCell>
               <TableCell align="right" sx={{ width: 48 }} />
@@ -75,10 +76,17 @@ export default function FileListSection({
                 <TableCell>
                   <Box sx={{ display:'flex', alignItems:'center' }}>
                     <PictureAsPdfIcon color="error" sx={{ mr:1 }} />
-                    <Typography noWrap>{item.name}</Typography>
+                    <Typography noWrap fontWeight="medium">{item.displayName}</Typography>
                   </Box>
                 </TableCell>
-                <TableCell align="center">{item.createdAt}</TableCell>
+                <TableCell>
+                  <Typography noWrap variant="body2" color="text.secondary">
+                    {item.name}
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="body2">{item.createdAt}</Typography>
+                </TableCell>
                 <TableCell align="center">
                   {title.includes('요약') ? (
                     <Chip 
@@ -100,8 +108,8 @@ export default function FileListSection({
                   <IconButton 
                     size="small" 
                     onClick={(e) => {
-                      e.stopPropagation();
-                      handleMenuOpen(e, item);
+                      e.stopPropagation()
+                      handleMenuOpen(e, item)
                     }}
                   >
                     <MoreVertIcon />
@@ -111,7 +119,7 @@ export default function FileListSection({
             ))}
             {pageItems.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
                   <Typography color="text.secondary">저장된 항목이 없습니다.</Typography>
                 </TableCell>
               </TableRow>
@@ -136,36 +144,34 @@ export default function FileListSection({
       <Menu
         anchorEl={anchorEl}
         open={openMenu}
-        onClose={(event, reason) => {
-          handleMenuClose();
-        }}
+        onClose={handleMenuClose}
         disableAutoFocusItem
         onClick={(e) => e.stopPropagation()}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem onClick={(e) => {
-          e.stopPropagation();
+          e.stopPropagation()
           if (activeItem) {
-            onView(activeItem);
+            onView(activeItem)
           }
-          handleMenuClose();
+          handleMenuClose()
         }}>
           보기
         </MenuItem>
         
         <MenuItem onClick={(e) => {
-          e.stopPropagation();
-          handleDownload();
+          e.stopPropagation()
+          handleDownload()
         }}>
           PDF 다운로드
         </MenuItem>
         
         {onDelete && activeItem && (
           <MenuItem onClick={(e) => {
-            e.stopPropagation();
-            onDelete(activeItem);
-            handleMenuClose();
+            e.stopPropagation()
+            onDelete(activeItem)
+            handleMenuClose()
           }}>
             삭제
           </MenuItem>

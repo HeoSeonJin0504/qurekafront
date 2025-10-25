@@ -14,7 +14,7 @@ interface QuestionDetailDialogProps {
   item: FileItem | QuestionItem | null
   dialogTitle: string
   dialogText: string
-  onDownload: (item: FileItem | QuestionItem) => void
+  onDownload: (item: FileItem | QuestionItem) => void | Promise<void>
 }
 
 export default function QuestionDetailDialog({
@@ -24,7 +24,7 @@ export default function QuestionDetailDialog({
   const [isJsonFormat, setIsJsonFormat] = useState(false)
   const [formattedText, setFormattedText] = useState<string>('')
   // PDF 다운로드 상태
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   useEffect(() => {
     // 다이얼로그가 열릴 때 JSON 파싱 시도
@@ -123,13 +123,17 @@ export default function QuestionDetailDialog({
     }
   }
 
-  const handleDownloadPDF = () => {
-    if (!item) return;
-    setDownloadingPdf(true); // 다운로드 시작
-    onDownload(item).finally(() => {
-      setDownloadingPdf(false); // 다운로드 완료
-    });
-  };
+  const handleDownloadPDF = async () => {
+    if (!item) return
+    setDownloadingPdf(true) // 다운로드 시작
+    try {
+      await Promise.resolve(onDownload(item))
+    } catch (error) {
+      console.error('PDF 다운로드 오류:', error)
+    } finally {
+      setDownloadingPdf(false) // 다운로드 완료
+    }
+  }
 
   if (!item) return null
 
@@ -165,12 +169,21 @@ export default function QuestionDetailDialog({
       )}
       
       <DialogTitle id="dialog-title">
-        {dialogTitle || '상세 보기'}
-        {item && (
-          <Typography variant="caption" display="block" color="text.secondary">
-            {item.createdAt}
+        <Box>
+          <Typography variant="h6" component="div">
+            {dialogTitle || '상세 보기'}
           </Typography>
-        )}
+          {item && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="caption" display="block" color="text.secondary">
+                원본 파일: {item.name}
+              </Typography>
+              <Typography variant="caption" display="block" color="text.secondary">
+                생성일: {item.createdAt}
+              </Typography>
+            </Box>
+          )}
+        </Box>
       </DialogTitle>
       
       <DialogContent dividers>
@@ -188,7 +201,7 @@ export default function QuestionDetailDialog({
           {item && (
             <DownloadTxtButton 
               text={formattedText} 
-              filename={`${item.name || 'download'}.txt`} 
+              filename={`${item.displayName || item.name || 'download'}.txt`} 
             />
           )}
         </Box>

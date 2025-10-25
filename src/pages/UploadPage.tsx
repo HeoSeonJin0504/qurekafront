@@ -50,6 +50,7 @@ import {
 import { jsPDF } from "jspdf";
 import SavedSummaryDialog from "../components/upload/SavedSummaryDialog";
 import { SummaryItem } from "../services/api";
+import SaveNameDialog from "../components/upload/SaveNameDialog";
 
 export default function UploadPage() {
   const { user } = useAuth();
@@ -101,6 +102,10 @@ export default function UploadPage() {
   const [openSavedSummariesDialog, setOpenSavedSummariesDialog] = useState(false);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [selectedSummary, setSelectedSummary] = useState<SummaryItem | null>(null);
+  
+  // 파일명 입력 모달 상태 추가
+  const [openSaveNameDialog, setOpenSaveNameDialog] = useState(false);
+  const [saveDialogType, setSaveDialogType] = useState<'summary' | 'question'>('summary');
 
   // PDF 다운로드 관련 상태 추가
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -178,13 +183,25 @@ export default function UploadPage() {
 
   const handleSaveSummary = async () => {
     if (!user || !fileName) return;
+    
+    // 모달 열기
+    setSaveDialogType('summary');
+    setOpenSaveNameDialog(true);
+  };
+
+  // 실제 요약 저장 함수
+  const handleConfirmSaveSummary = async (customName: string) => {
+    if (!user || !fileName) return;
+    
     try {
       await summaryAPI.saveSummary({
         userId: user.id,
-        fileName,
+        fileName: fileName,  // 업로드한 파일명
+        summaryName: customName,  // 사용자가 입력한 요약 이름
         summaryType: dbSummaryTypeKorean,
         summaryText,
       });
+      setOpenSaveNameDialog(false);
       setOpenSumDoneSnackbar(true);
     } catch (e) {
       console.error(e);
@@ -271,13 +288,25 @@ export default function UploadPage() {
 
   const handleSaveQuestion = async () => {
     if (!user || !fileName) return;
+    
+    // 모달 열기
+    setSaveDialogType('question');
+    setOpenSaveNameDialog(true);
+  };
+
+  // 실제 문제 저장 함수
+  const handleConfirmSaveQuestion = async (customName: string) => {
+    if (!user || !fileName) return;
+    
     try {
       await questionAPI.saveQuestion({
         userId: user.id,
-        fileName,
+        fileName: fileName,  // 업로드한 파일명
+        questionName: customName,  // 사용자가 입력한 문제 이름
         questionType: aiQuestionPromptKeys_Korean[qTab],
         questionText,
       });
+      setOpenSaveNameDialog(false);
       setOpenQDoneSnackbar(true);
     } catch (e) {
       console.error(e);
@@ -354,7 +383,6 @@ export default function UploadPage() {
   return (
     <>
       <Header />
-      {/* PageNavigator 컴포넌트 추가 */}
       <PageNavigator />
 
       <Box
@@ -366,7 +394,7 @@ export default function UploadPage() {
             theme.palette.mode === "light"
               ? "linear-gradient(145deg, #ffffff 0%, #f4f7fa 100%)"
               : "linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%)",
-          position: "relative", // 로딩 오버레이를 위해 추가
+          position: "relative",
         }}
       >
         {/* PDF 다운로드 중 로딩 오버레이 */}
@@ -830,6 +858,16 @@ export default function UploadPage() {
               </Snackbar>
             </>
           )}
+
+          {/* 파일명 입력 모달 추가 */}
+          <SaveNameDialog
+            open={openSaveNameDialog}
+            onClose={() => setOpenSaveNameDialog(false)}
+            onSave={saveDialogType === 'summary' ? handleConfirmSaveSummary : handleConfirmSaveQuestion}
+            defaultName={fileName || 'untitled'}
+            title={saveDialogType === 'summary' ? '요약 저장' : '문제 저장'}
+            type={saveDialogType}
+          />
 
           {/* 기존 Summary Dialog */}
           <Dialog

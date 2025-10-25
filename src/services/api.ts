@@ -268,6 +268,7 @@ export const aiQuestionAPI = {
 export interface SummaryItem {
   selection_id: number
   file_name: string
+  summary_name: string  // 추가
   summary_type: string
   created_at: string
   summary_text: string
@@ -286,6 +287,7 @@ export const summaryAPI = {
   saveSummary: (data: {
     userId: number
     fileName: string
+    summaryName: string  // 추가
     summaryType: string
     summaryText: string
   }) =>
@@ -318,6 +320,7 @@ export const summaryAPI = {
 export interface QuestionItem {
   selection_id: number
   file_name: string
+  question_name: string  // 추가
   question_type: string
   created_at: string
   question_text: string
@@ -336,6 +339,7 @@ export const questionAPI = {
   saveQuestion: (data: {
     userId: number
     fileName: string
+    questionName: string  // 추가
     questionType: string
     questionText: string
   }) =>

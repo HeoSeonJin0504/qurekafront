@@ -91,7 +91,8 @@ export default function Mypage() {
 
             return {
               id: s.selection_id,
-              name: s.file_name,
+              name: s.file_name,  // 원본 파일명
+              displayName: s.summary_name || s.file_name,  // 요약본 이름 (없으면 파일명)
               date: date.toLocaleDateString("ko-KR"),
               time: date.toLocaleTimeString("ko-KR", {
                 hour: "2-digit",
@@ -121,7 +122,8 @@ export default function Mypage() {
               const data = JSON.parse(q.question_text);
               return {
                 id: q.selection_id,
-                name: q.file_name,
+                name: q.file_name,  // 원본 파일명
+                displayName: q.question_name || q.file_name,  // 문제 이름 (없으면 파일명)
                 date: date.toLocaleDateString("ko-KR"),
                 time: date.toLocaleTimeString("ko-KR", {
                   hour: "2-digit",
@@ -149,7 +151,8 @@ export default function Mypage() {
             } catch {
               return {
                 id: q.selection_id,
-                name: q.file_name,
+                name: q.file_name,  // 원본 파일명
+                displayName: q.question_name || q.file_name,  // 문제 이름 (없으면 파일명)
                 date: date.toLocaleDateString("ko-KR"),
                 time: date.toLocaleTimeString("ko-KR", {
                   hour: "2-digit",
@@ -177,7 +180,7 @@ export default function Mypage() {
 
   // 다이얼로그 열기 함수
   const handleOpenDialog = (item: FileItem | QuestionItem) => {
-    setDialogTitle(item.name);
+    setDialogTitle(item.displayName);  // displayName으로 변경
     setDialogText(item.text);
     setActiveViewItem(item);
     setDialogOpen(true);
@@ -232,19 +235,17 @@ export default function Mypage() {
   // PDF 다운로드 함수
   const handleDownloadPDF = async (item: FileItem | QuestionItem) => {
     try {
-      setDownloadingPdf(true); // 다운로드 시작
+      setDownloadingPdf(true);
       if ('rawJson' in item && item.rawJson) {
-        // 문제인 경우 - rawJson을 전달해 JSON 파싱 처리가 이루어지도록 함
         await downloadAsPDF(
           item.rawJson,
-          item.name || 'question',
+          item.displayName || item.name || 'question',  // displayName 우선 사용
           (item as QuestionItem).displayType || '문제'
         );
       } else {
-        // 요약인 경우
         await downloadAsPDF(
           item.text,
-          item.name || 'summary',
+          item.displayName || item.name || 'summary',  // displayName 우선 사용
           (item as FileItem).summaryType || '요약'
         );
       }
@@ -252,7 +253,7 @@ export default function Mypage() {
       console.error('PDF 다운로드 오류:', error);
       alert('PDF 다운로드 중 오류가 발생했습니다.');
     } finally {
-      setDownloadingPdf(false); // 다운로드 완료
+      setDownloadingPdf(false);
     }
   };
 
