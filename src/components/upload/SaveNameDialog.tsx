@@ -76,8 +76,6 @@ const SaveNameDialog: React.FC<SaveNameDialogProps> = ({
         <Box sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             저장할 {type === 'summary' ? '요약본' : '문제'}의 <strong>이름</strong>을 입력하세요.
-            <br />
-            입력하지 않으면 파일명으로 저장됩니다.
           </Typography>
 
           <TextField
