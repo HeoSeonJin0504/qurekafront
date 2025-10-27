@@ -661,41 +661,47 @@ export default function UploadPage() {
                 <Alert
                   severity="success"
                   sx={{
-                    minWidth: 400,
-                    borderRadius: 3,
-                    boxShadow: '0 8px 32px rgba(46, 125, 50, 0.2)',
+                    minWidth: 380,
+                    maxWidth: 450,
+                    borderRadius: 2.5,
+                    boxShadow: '0 4px 20px rgba(46, 125, 50, 0.15)',
                     display: "flex",
                     alignItems: "center",
-                    py: 2,
-                    px: 3,
+                    py: 1.5,
+                    px: 2.5,
                   }}
                   action={
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={0.5} alignItems="center">
                       <Button
                         variant="contained"
-                        size="medium"
+                        size="small"
                         onClick={() => navigate('/mypage')}
                         sx={{ 
                           bgcolor: '#34C759',
                           color: 'white',
-                          fontWeight: 700,
-                          borderRadius: 2,
-                          px: 2.5,
-                          py: 0.8,
+                          fontWeight: 600,
+                          fontSize: '0.813rem',
+                          borderRadius: 1.5,
+                          px: 2,
+                          py: 0.5,
+                          minWidth: 'auto',
+                          textTransform: 'none',
                           '&:hover': {
                             bgcolor: '#28a745',
-                            transform: 'scale(1.05)',
+                            transform: 'translateY(-1px)',
                           },
                           transition: 'all 0.2s',
+                          boxShadow: '0 2px 8px rgba(52, 199, 89, 0.3)',
                         }}
                       >
-                        📋 마이페이지
+                        마이페이지
                       </Button>
                       <IconButton
                         size="small"
                         aria-label="close"
                         sx={{
                           color: 'text.secondary',
+                          p: 0.5,
                           '&:hover': {
                             bgcolor: 'action.hover',
                           },
@@ -708,7 +714,7 @@ export default function UploadPage() {
                   }
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Typography variant="body1" fontWeight={600}>
+                    <Typography variant="body2" fontWeight={600}>
                       ✅ 요약 저장이 완료되었습니다!
                     </Typography>
                   </Box>
@@ -887,32 +893,37 @@ export default function UploadPage() {
                 <Alert
                   severity="success"
                   sx={{
-                    minWidth: 400,
-                    borderRadius: 3,
-                    boxShadow: '0 8px 32px rgba(46, 125, 50, 0.2)',
+                    minWidth: 380,
+                    maxWidth: 450,
+                    borderRadius: 2.5,
+                    boxShadow: '0 4px 20px rgba(46, 125, 50, 0.15)',
                     display: "flex",
                     alignItems: "center",
-                    py: 2,
-                    px: 3,
+                    py: 1.5,
+                    px: 2.5,
                   }}
                   action={
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={0.5} alignItems="center">
                       <Button
                         variant="contained"
-                        size="medium"
+                        size="small"
                         onClick={() => navigate('/mypage')}
                         sx={{ 
                           bgcolor: '#34C759',
                           color: 'white',
-                          fontWeight: 700,
-                          borderRadius: 2,
-                          px: 2.5,
-                          py: 0.8,
+                          fontWeight: 600,
+                          fontSize: '0.813rem',
+                          borderRadius: 1.5,
+                          px: 2,
+                          py: 0.5,
+                          minWidth: 'auto',
+                          textTransform: 'none',
                           '&:hover': {
                             bgcolor: '#28a745',
-                            transform: 'scale(1.05)',
+                            transform: 'translateY(-1px)',
                           },
                           transition: 'all 0.2s',
+                          boxShadow: '0 2px 8px rgba(52, 199, 89, 0.3)',
                         }}
                       >
                         마이페이지
@@ -922,6 +933,7 @@ export default function UploadPage() {
                         aria-label="close"
                         sx={{
                           color: 'text.secondary',
+                          p: 0.5,
                           '&:hover': {
                             bgcolor: 'action.hover',
                           },
@@ -934,7 +946,7 @@ export default function UploadPage() {
                   }
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Typography variant="body1" fontWeight={600}>
+                    <Typography variant="body2" fontWeight={600}>
                       문제 저장이 완료되었습니다!
                     </Typography>
                   </Box>
