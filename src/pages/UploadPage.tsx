@@ -19,8 +19,9 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
-import { CloudUpload, GetApp } from "@mui/icons-material";
+import { CloudUpload, GetApp, Close } from "@mui/icons-material";
 import Header from "../components/Header";
 // 추가 임포트
 import PageNavigator from "../components/common/PageNavigator";
@@ -28,6 +29,7 @@ import SummarySettings from "../components/upload/SummarySettings";
 import ProblemSettings from "../components/upload/ProblemSettings";
 import QuestionRenderer from "../components/upload/QuestionRenderer";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import {
   aiSummaryAPI,
   aiQuestionAPI,
@@ -54,6 +56,7 @@ import SaveNameDialog from "../components/upload/SaveNameDialog";
 
 export default function UploadPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // common state
   const [mainTab, setMainTab] = useState<MainTab>("summary");
@@ -651,7 +654,8 @@ export default function UploadPage() {
 
               <Snackbar
                 open={openSumDoneSnackbar}
-                onClose={() => {}}
+                onClose={() => setOpenSumDoneSnackbar(false)}
+                autoHideDuration={10000}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
               >
                 <Alert
@@ -662,14 +666,27 @@ export default function UploadPage() {
                     alignItems: "center",
                   }}
                   action={
-                    <Button
-                      color="inherit"
-                      size="small"
-                      onClick={() => setOpenSumDoneSnackbar(false)}
-                      sx={{ alignSelf: "center" }}
-                    >
-                      확인
-                    </Button>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Button
+                        color="inherit"
+                        size="small"
+                        onClick={() => navigate('/mypage')}
+                        sx={{ 
+                          alignSelf: "center",
+                          fontWeight: 600,
+                        }}
+                      >
+                        바로 가기
+                      </Button>
+                      <IconButton
+                        size="small"
+                        aria-label="close"
+                        color="inherit"
+                        onClick={() => setOpenSumDoneSnackbar(false)}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Stack>
                   }
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -843,7 +860,8 @@ export default function UploadPage() {
 
               <Snackbar
                 open={openQDoneSnackbar}
-                onClose={() => {}}
+                onClose={() => setOpenQDoneSnackbar(false)}
+                autoHideDuration={10000}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
               >
                 <Alert
@@ -854,14 +872,27 @@ export default function UploadPage() {
                     alignItems: "center",
                   }}
                   action={
-                    <Button
-                      color="inherit"
-                      size="small"
-                      onClick={() => setOpenQDoneSnackbar(false)}
-                      sx={{ alignSelf: "center" }}
-                    >
-                      확인
-                    </Button>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Button
+                        color="inherit"
+                        size="small"
+                        onClick={() => navigate('/mypage')}
+                        sx={{ 
+                          alignSelf: "center",
+                          fontWeight: 600,
+                        }}
+                      >
+                        바로 가기
+                      </Button>
+                      <IconButton
+                        size="small"
+                        aria-label="close"
+                        color="inherit"
+                        onClick={() => setOpenQDoneSnackbar(false)}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Stack>
                   }
                 >
                   문제 저장이 완료되었습니다!
