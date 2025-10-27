@@ -656,10 +656,9 @@ export default function SummarySettings({
               {Array.from({ length: sumKeywordCount }).map((_, index) => (
                 <TextField
                   key={index}
-                  label={`키워드 ${index + 1}`}
                   value={keywords[index] || ''}
                   onChange={(e) => handleKeywordChange(index, e.target.value)}
-                  placeholder="키워드 입력"
+                  placeholder="키워드를 입력하세요"
                   size="small"
                   inputProps={{ maxLength: 10 }}
                   sx={{ 
