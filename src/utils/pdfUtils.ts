@@ -397,7 +397,7 @@ export const downloadAsPDF = async (
     await renderKoreanQuestions();
     
     // PDF 저장
-    const outputFileName = `${safeFileName}_${safeType}.pdf`;
+    const outputFileName = `${safeFileName}_${safeType}`;
     pdf.save(outputFileName);
     
   } catch (error) {
