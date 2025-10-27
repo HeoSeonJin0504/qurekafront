@@ -8,8 +8,6 @@ import {
   Radio,
   Paper
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 
 interface MultipleChoiceQuestionProps {
   question: any;
@@ -74,9 +72,6 @@ export default function MultipleChoiceQuestion({
       <FormControl component="fieldset" fullWidth sx={{ mt: 2 }}>
         <RadioGroup value={userAnswer || ''} onChange={handleChange}>
           {options.map((option: any) => {
-            const isCorrect = showResult && option.id === correctAnswer;
-            const isWrong = showResult && userAnswer === option.id && option.id !== correctAnswer;
-
             return (
               <Paper
                 key={option.id}
@@ -84,35 +79,19 @@ export default function MultipleChoiceQuestion({
                 sx={{
                   mb: 1,
                   p: 1,
-                  bgcolor: isCorrect 
-                    ? 'success.light' 
-                    : isWrong 
-                      ? 'error.light' 
-                      : 'background.paper',
-                  border: isCorrect || isWrong ? 1 : 0,
-                  borderColor: isCorrect ? 'success.main' : isWrong ? 'error.main' : 'transparent',
+                  bgcolor: 'background.paper',
                 }}
               >
                 <FormControlLabel
                   value={option.id}
                   control={<Radio disabled={showResult} />}
                   label={
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography sx={{ 
-                        color: isCorrect || isWrong ? 'white' : 'inherit'
-                      }}>
-                        {option.id}. {option.text}
-                      </Typography>
-                      {showResult && isCorrect && (
-                        <CheckCircleOutlineIcon sx={{ ml: 1, color: 'white' }} />
-                      )}
-                      {showResult && isWrong && (
-                        <CancelOutlinedIcon sx={{ ml: 1, color: 'white' }} />
-                      )}
-                    </Box>
+                    <Typography>
+                      {option.id}. {option.text}
+                    </Typography>
                   }
                   disabled={showResult}
-                  sx={{ width: '100%', color: isCorrect || isWrong ? 'white' : 'inherit' }}
+                  sx={{ width: '100%' }}
                 />
               </Paper>
             );

@@ -153,8 +153,6 @@ export default function FillInTheBlankQuestion({
             
             <Grid container spacing={2}>
               {blanks.map((blank, index) => {
-                const isCorrect = isBlankCorrect(index);
-                
                 return (
                   <Grid item xs={12} key={`blank-field-${index}`}>
                     <Paper 
@@ -164,11 +162,7 @@ export default function FillInTheBlankQuestion({
                         display: 'flex',
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'flex-start', sm: 'center' },
-                        backgroundColor: showResult
-                          ? isCorrect
-                            ? 'success.light'
-                            : 'error.light'
-                          : 'background.default',
+                        backgroundColor: 'background.default',
                       }}
                     >
                       <Typography 
@@ -176,7 +170,6 @@ export default function FillInTheBlankQuestion({
                         sx={{ 
                           mr: 2, 
                           mb: { xs: 1, sm: 0 },
-                          color: showResult ? 'white' : 'inherit',
                           fontWeight: 'bold',
                           minWidth: '80px'
                         }}
@@ -196,28 +189,11 @@ export default function FillInTheBlankQuestion({
                           InputProps={{
                             sx: {
                               bgcolor: 'background.paper',
-                              color: showResult ? 'white' : 'inherit',
                             },
                           }}
                         />
                       </Box>
-                      
-                      {showResult && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                          {isCorrect ? (
-                            <CheckCircleOutlineIcon sx={{ color: 'white' }} />
-                          ) : (
-                            <CancelOutlinedIcon sx={{ color: 'white' }} />
-                          )}
-                        </Box>
-                      )}
                     </Paper>
-                    
-                    {showResult && !isCorrect && (
-                      <Alert severity="info" sx={{ mt: 1 }}>
-                        정답: {blanks[index]?.correct_answer || question.correct_answers?.[index] || ''}
-                      </Alert>
-                    )}
                   </Grid>
                 );
               })}

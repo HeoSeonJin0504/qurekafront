@@ -37,44 +37,37 @@ export default function TrueFalseQuestion({
   };
 
   const getButtonStyle = (value: boolean) => {
-    // 결과를 보여주지 않을 때
-    if (!showResult) {
-      // 선택되지 않았을 때
-      if (userAnswer !== value) {
+    // 결과 표시 중일 때
+    if (showResult) {
+      // 선택된 버튼만 배경색 유지
+      if (userAnswer === value) {
         return {
-          bgcolor: 'transparent',
-          color: value ? 'primary.main' : 'error.main',
-          border: 2,
-          borderColor: value ? 'primary.main' : 'error.main',
+          bgcolor: value ? 'primary.main' : 'error.main',
+          color: 'white',
         };
       }
-      // 선택되었을 때
+      // 선택되지 않은 버튼은 투명하게
       return {
-        bgcolor: value ? 'primary.main' : 'error.main',
-        color: 'white',
+        bgcolor: 'transparent',
+        color: value ? 'primary.main' : 'error.main',
+        border: 0,
       };
     }
     
-    // 결과를 보여줄 때
-    if (value === correctAnswer) {
-      return { 
-        bgcolor: 'success.main',
-        color: 'white',
+    // 결과 표시 전 (문제 풀이 중)
+    // 선택되지 않았을 때
+    if (userAnswer !== value) {
+      return {
+        bgcolor: 'transparent',
+        color: value ? 'primary.main' : 'error.main',
+        border: 2,
+        borderColor: value ? 'primary.main' : 'error.main',
       };
     }
-    
-    if (userAnswer === value) {
-      return { 
-        bgcolor: 'error.main',
-        color: 'white',
-      };
-    }
-    
+    // 선택되었을 때
     return {
-      bgcolor: 'transparent',
-      color: value ? 'primary.main' : 'error.main',
-      border: 2,
-      borderColor: value ? 'primary.main' : 'error.main',
+      bgcolor: value ? 'primary.main' : 'error.main',
+      color: 'white',
     };
   };
 
@@ -130,27 +123,6 @@ export default function TrueFalseQuestion({
             <Typography variant="subtitle1" sx={{ mt: 1 }}>거짓(False)</Typography>
           </Grid>
         </Grid>
-        
-        {showResult && (
-          <Box sx={{ 
-            mt: 4, 
-            textAlign: 'center', 
-            p: 2, 
-            bgcolor: userAnswer === correctAnswer ? 'success.light' : 'error.light', 
-            borderRadius: 2 
-          }}>
-            <Typography 
-              variant="h6" 
-              color={userAnswer === correctAnswer ? 'success.dark' : 'error.dark'} 
-              fontWeight="bold"
-            >
-              {userAnswer === correctAnswer ? '정답입니다!' : '오답입니다!'}
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 1 }}>
-              정답: {correctAnswer === true ? 'O (참)' : 'X (거짓)'}
-            </Typography>
-          </Box>
-        )}
       </Paper>
     </Box>
   );

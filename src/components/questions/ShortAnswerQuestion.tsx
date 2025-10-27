@@ -86,11 +86,7 @@ export default function ShortAnswerQuestion({
           placeholder="여기에 답변을 입력한 후 '정답 확인' 버튼을 클릭하세요"
           InputProps={{
             sx: {
-              bgcolor: showResult
-                ? isCorrect
-                  ? 'rgba(46, 125, 50, 0.1)'
-                  : 'rgba(211, 47, 47, 0.1)'
-                : 'background.paper',
+              bgcolor: 'background.paper',
             },
           }}
         />

@@ -192,23 +192,12 @@ export default function SequenceQuestion({
 
         <List sx={{ width: "100%" }}>
           {items.map((item, position) => {
-            const isCorrect =
-              showResult && correctSequence[position] === selections[position];
-            const isWrong =
-              showResult &&
-              correctSequence[position] !== selections[position] &&
-              selections[position] !== null;
-
             return (
               <React.Fragment key={`position-${position}`}>
                 {position > 0 && <Divider />}
                 <ListItem
                   sx={{
-                    bgcolor: isCorrect
-                      ? "success.light"
-                      : isWrong
-                      ? "error.light"
-                      : "background.paper",
+                    bgcolor: "background.paper",
                     p: 2,
                   }}
                 >
@@ -216,7 +205,6 @@ export default function SequenceQuestion({
                     <Grid item xs={12} md={3}>
                       <Typography
                         sx={{
-                          color: isCorrect || isWrong ? "white" : "inherit",
                           fontWeight: "bold",
                         }}
                       >
@@ -251,12 +239,6 @@ export default function SequenceQuestion({
                                         option.id
                                       ))
                                   }
-                                  sx={{
-                                    color:
-                                      isCorrect || isWrong
-                                        ? "white"
-                                        : "inherit",
-                                  }}
                                 />
                               </Grid>
                             ))}
@@ -264,35 +246,6 @@ export default function SequenceQuestion({
                         </RadioGroup>
                       </FormControl>
                     </Grid>
-
-                    {showResult && (
-                      <Grid
-                        item
-                        xs={12}
-                        sx={{ mt: 1, display: "flex", alignItems: "center" }}
-                      >
-                        {isCorrect && (
-                          <>
-                            <CheckCircleOutlineIcon
-                              sx={{ mr: 1, color: "white" }}
-                            />
-                            <Typography color="white">정답입니다!</Typography>
-                          </>
-                        )}
-                        {isWrong && (
-                          <>
-                            <CancelOutlinedIcon
-                              sx={{ mr: 1, color: "white" }}
-                            />
-                            <Typography color="white">
-                              오답입니다. 정답은 "
-                              {getItemById(correctSequence[position]).text}"
-                              입니다.
-                            </Typography>
-                          </>
-                        )}
-                      </Grid>
-                    )}
                   </Grid>
                 </ListItem>
               </React.Fragment>
