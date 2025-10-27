@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  Typography, Box, CircularProgress
+  Typography, Box, CircularProgress, IconButton
 } from '@mui/material'
+import CloseIcon from '@mui/icons-material/Close'
 import { FileItem, QuestionItem } from '../../types/mypage'
-import { DownloadTxtButton } from '../DownloadTxtButton'
 import QuestionRenderer from '../upload/QuestionRenderer'
 import { Question } from '../../types/upload'
 
@@ -135,6 +135,17 @@ export default function QuestionDetailDialog({
     }
   }
 
+  const handleDownloadTxt = () => {
+    if (!item) return
+    const element = document.createElement('a')
+    const file = new Blob([formattedText], { type: 'text/plain' })
+    element.href = URL.createObjectURL(file)
+    element.download = `${item.displayName || item.name || 'download'}.txt`
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+  }
+
   if (!item) return null
 
   return (
@@ -169,20 +180,31 @@ export default function QuestionDetailDialog({
       )}
       
       <DialogTitle id="dialog-title">
-        <Box>
-          <Typography variant="h6" component="div">
-            {dialogTitle || '상세 보기'}
-          </Typography>
-          {item && (
-            <Box sx={{ mt: 1 }}>
-              <Typography variant="caption" display="block" color="text.secondary">
-                원본 파일: {item.name}
-              </Typography>
-              <Typography variant="caption" display="block" color="text.secondary">
-                생성일: {item.createdAt}
-              </Typography>
-            </Box>
-          )}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography variant="h6" component="div">
+              {dialogTitle || '상세 보기'}
+            </Typography>
+            {item && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" display="block" color="text.secondary">
+                  원본 파일: {item.name}
+                </Typography>
+                <Typography variant="caption" display="block" color="text.secondary">
+                  생성일: {item.createdAt}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </Box>
       </DialogTitle>
       
@@ -196,19 +218,17 @@ export default function QuestionDetailDialog({
         )}
       </DialogContent>
       
-      <DialogActions>
-        <Box sx={{ mr: 'auto', ml: 2 }}>
-          {item && (
-            <DownloadTxtButton 
-              text={formattedText} 
-              filename={`${item.displayName || item.name || 'download'}.txt`} 
-            />
-          )}
-        </Box>
+      <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
+        <Button 
+          onClick={handleDownloadTxt} 
+          variant="contained"
+          color="primary"
+        >
+          텍스트 다운로드
+        </Button>
         <Button onClick={handleDownloadPDF} variant="contained" color="primary">
           PDF 다운로드
         </Button>
-        <Button onClick={onClose}>닫기</Button>
       </DialogActions>
     </Dialog>
   )
