@@ -661,27 +661,45 @@ export default function UploadPage() {
                 <Alert
                   severity="success"
                   sx={{
-                    borderRadius: 2,
+                    minWidth: 400,
+                    borderRadius: 3,
+                    boxShadow: '0 8px 32px rgba(46, 125, 50, 0.2)',
                     display: "flex",
                     alignItems: "center",
+                    py: 2,
+                    px: 3,
                   }}
                   action={
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Button
-                        color="inherit"
-                        size="small"
+                        variant="contained"
+                        size="medium"
                         onClick={() => navigate('/mypage')}
                         sx={{ 
-                          alignSelf: "center",
-                          fontWeight: 600,
+                          bgcolor: '#34C759',
+                          color: 'white',
+                          fontWeight: 700,
+                          borderRadius: 2,
+                          px: 2.5,
+                          py: 0.8,
+                          '&:hover': {
+                            bgcolor: '#28a745',
+                            transform: 'scale(1.05)',
+                          },
+                          transition: 'all 0.2s',
                         }}
                       >
-                        바로 가기
+                        📋 마이페이지
                       </Button>
                       <IconButton
                         size="small"
                         aria-label="close"
-                        color="inherit"
+                        sx={{
+                          color: 'text.secondary',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        }}
                         onClick={() => setOpenSumDoneSnackbar(false)}
                       >
                         <Close fontSize="small" />
@@ -690,7 +708,9 @@ export default function UploadPage() {
                   }
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
-                    요약 저장이 완료되었습니다!
+                    <Typography variant="body1" fontWeight={600}>
+                      ✅ 요약 저장이 완료되었습니다!
+                    </Typography>
                   </Box>
                 </Alert>
               </Snackbar>
@@ -867,27 +887,45 @@ export default function UploadPage() {
                 <Alert
                   severity="success"
                   sx={{
-                    borderRadius: 2,
+                    minWidth: 400,
+                    borderRadius: 3,
+                    boxShadow: '0 8px 32px rgba(46, 125, 50, 0.2)',
                     display: "flex",
                     alignItems: "center",
+                    py: 2,
+                    px: 3,
                   }}
                   action={
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Button
-                        color="inherit"
-                        size="small"
+                        variant="contained"
+                        size="medium"
                         onClick={() => navigate('/mypage')}
                         sx={{ 
-                          alignSelf: "center",
-                          fontWeight: 600,
+                          bgcolor: '#34C759',
+                          color: 'white',
+                          fontWeight: 700,
+                          borderRadius: 2,
+                          px: 2.5,
+                          py: 0.8,
+                          '&:hover': {
+                            bgcolor: '#28a745',
+                            transform: 'scale(1.05)',
+                          },
+                          transition: 'all 0.2s',
                         }}
                       >
-                        바로 가기
+                        마이페이지
                       </Button>
                       <IconButton
                         size="small"
                         aria-label="close"
-                        color="inherit"
+                        sx={{
+                          color: 'text.secondary',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        }}
                         onClick={() => setOpenQDoneSnackbar(false)}
                       >
                         <Close fontSize="small" />
@@ -895,7 +933,11 @@ export default function UploadPage() {
                     </Stack>
                   }
                 >
-                  문제 저장이 완료되었습니다!
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography variant="body1" fontWeight={600}>
+                      문제 저장이 완료되었습니다!
+                    </Typography>
+                  </Box>
                 </Alert>
               </Snackbar>
             </>
