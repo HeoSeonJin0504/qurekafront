@@ -77,50 +77,62 @@ export default function TrueFalseQuestion({
         {questionText}
       </Typography>
 
-      <Paper elevation={3} sx={{ p: 4, mt: 2, bgcolor: 'background.paper' }}>
-        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-          다음 문장이 참인지 거짓인지 선택하세요:
+      <Paper elevation={3} sx={{ p: 3, mt: 2, bgcolor: 'background.paper' }}>
+        <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center' }}>
+          다음 문장이 참인지 거짓인지 선택하세요
         </Typography>
         
-        <Grid container spacing={4} justifyContent="center" alignItems="center">
-          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+        <Grid container spacing={3} justifyContent="center" alignItems="center">
+          <Grid item xs={6} sm={5} md={4} sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"
               onClick={() => handleButtonClick(true)}
               disabled={showResult}
               sx={{
-                width: { xs: 80, sm: 100 },
-                height: { xs: 80, sm: 100 },
+                width: 80,
+                height: 80,
                 borderRadius: '50%',
-                fontSize: { xs: '2rem', sm: '2.5rem' },
+                fontSize: '2rem',
                 fontWeight: 'bold',
-                boxShadow: 3,
+                boxShadow: 2,
+                minWidth: 0,
+                '&:hover': {
+                  boxShadow: 4,
+                },
                 ...getButtonStyle(true),
               }}
             >
               O
             </Button>
-            <Typography variant="subtitle1" sx={{ mt: 1 }}>참(True)</Typography>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'medium' }}>
+              참 (True)
+            </Typography>
           </Grid>
           
-          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+          <Grid item xs={6} sm={5} md={4} sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"
               onClick={() => handleButtonClick(false)}
               disabled={showResult}
               sx={{
-                width: { xs: 80, sm: 100 },
-                height: { xs: 80, sm: 100 },
+                width: 80,
+                height: 80,
                 borderRadius: '50%',
-                fontSize: { xs: '2rem', sm: '2.5rem' },
+                fontSize: '2rem',
                 fontWeight: 'bold',
-                boxShadow: 3,
+                boxShadow: 2,
+                minWidth: 0,
+                '&:hover': {
+                  boxShadow: 4,
+                },
                 ...getButtonStyle(false),
               }}
             >
               X
             </Button>
-            <Typography variant="subtitle1" sx={{ mt: 1 }}>거짓(False)</Typography>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'medium' }}>
+              거짓 (False)
+            </Typography>
           </Grid>
         </Grid>
       </Paper>
