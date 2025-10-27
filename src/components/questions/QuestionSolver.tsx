@@ -121,7 +121,14 @@ const preprocessQuestion = (question: any, type: string): void => {
 
 // 답안 비교 함수들
 const compareAnswers = {
-  multiple_choice: (userAnswer: any, correctAnswer: any) => userAnswer === correctAnswer,
+  multiple_choice: (userAnswer: any, correctAnswer: any) => {
+    // 알파벳 형식을 숫자로 변환
+    let processedCorrectAnswer = correctAnswer;
+    if (typeof correctAnswer === 'string' && /^[A-Z]$/.test(correctAnswer)) {
+      processedCorrectAnswer = String(correctAnswer.charCodeAt(0) - 64);
+    }
+    return userAnswer === processedCorrectAnswer;
+  },
   
   true_false: (userAnswer: any, correctAnswer: any) => userAnswer === correctAnswer,
   

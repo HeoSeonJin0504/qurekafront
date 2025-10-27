@@ -30,11 +30,15 @@ export default function MultipleChoiceQuestion({
   if (question.options) {
     // options가 { id: "A", text: "내용" } 형태인지 확인
     if (typeof question.options[0] === 'object' && question.options[0].id && question.options[0].text) {
-      options = question.options;
+      // 기존 ID를 숫자로 변환
+      options = question.options.map((opt: any, index: number) => ({
+        id: String(index + 1), // 1, 2, 3...
+        text: opt.text
+      }));
     } else {
       // 단순 문자열 배열인 경우 변환
       options = question.options.map((opt: string, index: number) => ({
-        id: String.fromCharCode(65 + index), // A, B, C...
+        id: String(index + 1), // 1, 2, 3...
         text: opt
       }));
     }
@@ -42,22 +46,28 @@ export default function MultipleChoiceQuestion({
     // 대체 옵션 필드 (교차 호환성)
     if (question.choices) {
       options = question.choices.map((choice: any, index: number) => {
-        if (typeof choice === 'object' && choice.id && choice.text) {
-          return choice;
+        if (typeof choice === 'object' && choice.text) {
+          return {
+            id: String(index + 1),
+            text: choice.text
+          };
         }
         return {
-          id: String.fromCharCode(65 + index),
+          id: String(index + 1),
           text: choice
         };
       });
     }
   }
 
-  // 정답 확인
-  const correctAnswer = question.correct_answer || 
-                       (question.correct_option_index !== undefined 
-                        ? String.fromCharCode(65 + question.correct_option_index)
-                        : null);
+  // 정답 확인 - 알파벳을 숫자로 변환
+  let correctAnswer = question.correct_answer;
+  if (correctAnswer && /^[A-Z]$/.test(correctAnswer)) {
+    // A, B, C... 형식이면 1, 2, 3...으로 변환
+    correctAnswer = String(correctAnswer.charCodeAt(0) - 64);
+  } else if (question.correct_option_index !== undefined) {
+    correctAnswer = String(question.correct_option_index + 1);
+  }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onAnswer(event.target.value);
