@@ -12,7 +12,10 @@ import {
   DialogActions,
   Button,
   Snackbar,
+  IconButton,
+  Stack,
 } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import Header from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
 import { summaryAPI, questionAPI } from "../services/api";
@@ -331,15 +334,46 @@ export default function Mypage() {
 
         <Snackbar
           open={snackbar.open}
-          autoHideDuration={3000}
+          autoHideDuration={10000}
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           <Alert
             severity={snackbar.severity}
-            onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+            sx={{
+              minWidth: 380,
+              maxWidth: 450,
+              borderRadius: 2.5,
+              boxShadow: snackbar.severity === 'success' 
+                ? '0 4px 20px rgba(46, 125, 50, 0.15)'
+                : '0 4px 20px rgba(211, 47, 47, 0.15)',
+              display: "flex",
+              alignItems: "center",
+              py: 1.5,
+              px: 2.5,
+            }}
+            action={
+              <IconButton
+                size="small"
+                aria-label="close"
+                sx={{
+                  color: 'text.secondary',
+                  p: 0.5,
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                }}
+                onClick={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+              >
+                <Close fontSize="small" />
+              </IconButton>
+            }
           >
-            {snackbar.message}
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography variant="body2" fontWeight={600}>
+                {snackbar.message}
+              </Typography>
+            </Box>
           </Alert>
         </Snackbar>
 
