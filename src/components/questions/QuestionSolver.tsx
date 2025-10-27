@@ -253,11 +253,28 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     const userAnswer = userAnswers[currentQuestionIndex];
     const type = parsedData.type as keyof typeof compareAnswers;
     
-    if (compareAnswers[type]) {
-      return compareAnswers[type](userAnswer, currentQuestion);
+    switch (type) {
+      case 'multiple_choice':
+        return compareAnswers.multiple_choice(userAnswer, currentQuestion.correct_answer);
+      
+      case 'true_false':
+        return compareAnswers.true_false(userAnswer, currentQuestion.correct_answer);
+      
+      case 'sequence':
+        return compareAnswers.sequence(userAnswer, currentQuestion.correct_sequence);
+      
+      case 'fill_in_the_blank':
+        return compareAnswers.fill_in_the_blank(userAnswer, currentQuestion);
+      
+      case 'short_answer':
+        return compareAnswers.short_answer(userAnswer, currentQuestion);
+      
+      case 'descriptive':
+        return compareAnswers.descriptive(userAnswer, currentQuestion);
+      
+      default:
+        return false;
     }
-    
-    return false;
   }, [parsedData, userAnswers, currentQuestionIndex, currentQuestion]);
 
   const isCheckButtonDisabled = useMemo((): boolean => {
