@@ -239,14 +239,28 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       // n지 선다형
       if (question.options && question.correct_answer && typeof question.correct_answer === 'string') {
         if (!Array.isArray(question.options) || question.options.length === 0) {
-          throw new Error('문제 생성 중 오류가 발생했습니다.');
+          throw new Error('선택지 정보가 올바르지 않습니다.');
+        }
+        // options 배열의 각 항목이 id와 text를 가지고 있는지 검증
+        const hasInvalidOption = question.options.some(
+          (opt: any) => !opt.id || !opt.text
+        );
+        if (hasInvalidOption) {
+          throw new Error('선택지 형식이 올바르지 않습니다.');
         }
         return renderMultipleChoice(question, index)
       }
       // 순서 배열형
       if (question.items && question.correct_sequence) {
         if (!Array.isArray(question.items) || !Array.isArray(question.correct_sequence)) {
-          throw new Error('문제 생성 중 오류가 발생했습니다.');
+          throw new Error('순서 배열 정보가 올바르지 않습니다.');
+        }
+        // items 배열의 각 항목이 id와 text를 가지고 있는지 검증
+        const hasInvalidItem = question.items.some(
+          (item: any) => item.id === undefined || !item.text
+        );
+        if (hasInvalidItem) {
+          throw new Error('순서 배열 형식이 올바르지 않습니다.');
         }
         return renderSequence(question, index)
       }
@@ -257,7 +271,14 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       // 빈칸 채우기형
       if (question.blanks) {
         if (!Array.isArray(question.blanks) || question.blanks.length === 0) {
-          throw new Error('문제 생성 중 오류가 발생했습니다.');
+          throw new Error('빈칸 정보가 올바르지 않습니다.');
+        }
+        // blanks 배열의 각 항목이 correct_answer를 가지고 있는지 검증
+        const hasInvalidBlank = question.blanks.some(
+          (blank: any) => !blank.correct_answer
+        );
+        if (hasInvalidBlank) {
+          throw new Error('빈칸 형식이 올바르지 않습니다.');
         }
         return renderFillInTheBlank(question, index)
       }
@@ -271,7 +292,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       }
 
       // 어떤 형식에도 해당하지 않는 경우
-      throw new Error('문제 생성 중 오류가 발생했습니다.');
+      throw new Error('지원하지 않는 문제 형식입니다.');
     } catch (error) {
       console.error(`문제 ${index + 1} 렌더링 오류:`, error);
       return (

@@ -220,6 +220,7 @@ export default function UploadPage() {
           alert('문제가 생성되지 않았습니다.\n다시 한 번 시도해주세요.');
           setIsJsonFormat(false);
           setParsedQuestions([]);
+          // questionText는 유지 (Paper는 표시해야 하므로)
           return false;
         }
         setParsedQuestions(data.questions);
@@ -227,14 +228,18 @@ export default function UploadPage() {
         return true;
       } else {
         console.warn('JSON 형식이지만 questions 배열이 없습니다.');
+        alert('문제 생성 중 오류가 발생했습니다.\n다시 한 번 시도해주세요.');
         setIsJsonFormat(false);
         setParsedQuestions([]);
+        // questionText는 유지
         return false;
       }
     } catch (error) {
       console.error("JSON 파싱 오류:", error);
+      alert('문제 생성 중 오류가 발생했습니다.\n다시 한 번 시도해주세요.');
       setIsJsonFormat(false);
       setParsedQuestions([]);
+      // questionText는 유지
       return false;
     }
   };
@@ -259,7 +264,8 @@ export default function UploadPage() {
 
       const res = await aiQuestionAPI.generateQuestions(payload);
       setQuestionText(res.data.result);
-
+      
+      // JSON 파싱 시도
       parseQuestionJson(res.data.result);
     } catch (e: any) {
       console.error(e);
@@ -269,7 +275,7 @@ export default function UploadPage() {
     }
   };
 
-  // 파일에서 직접 문제 생성 함수 추가
+  // 파일에서 직접 문제 생성 함수 수정
   const handleGenerateQuestionFromFile = async () => {
     if (!file || !user) return alert("파일 선택 및 로그인 필요");
     setLoadingQ(true);
@@ -290,7 +296,8 @@ export default function UploadPage() {
 
       const res = await aiQuestionAPI.generateQuestionsFromFile(fd);
       setQuestionText(res.data.result);
-
+      
+      // JSON 파싱 시도
       parseQuestionJson(res.data.result);
     } catch (e: any) {
       console.error(e);
@@ -854,16 +861,19 @@ export default function UploadPage() {
                       </Button>
                     </Box>
 
-                    {/* JSON 형식일 때는 파싱된 결과를 보여주고, 아닐 때는 기존 텍스트 */}
-                    {isJsonFormat ? (
+                    {/* JSON 형식일 때만 파싱된 결과를 보여줌 */}
+                    {isJsonFormat && parsedQuestions.length > 0 ? (
                       <QuestionRenderer questions={parsedQuestions} />
                     ) : (
-                      <Typography
-                        style={{ whiteSpace: "pre-wrap" }}
-                        color="text.secondary"
-                      >
-                        {questionText}
-                      </Typography>
+                      <Alert severity="error" sx={{ borderRadius: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                          문제 생성 중 오류가 발생했습니다.
+                        </Typography>
+                        <Typography variant="body2">
+                          문제를 불러올 수 없습니다.<br />
+                          문제를 다시 생성해 주세요.
+                        </Typography>
+                      </Alert>
                     )}
 
                     <Stack 
@@ -875,6 +885,7 @@ export default function UploadPage() {
                       <Button
                         variant="outlined"
                         onClick={handleSaveQuestion}
+                        disabled={!isJsonFormat || parsedQuestions.length === 0}
                         sx={{ borderRadius: 2.5, px: 3 }}
                       >
                         💾 문제 저장
