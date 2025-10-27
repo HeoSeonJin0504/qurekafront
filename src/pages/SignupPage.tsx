@@ -169,7 +169,7 @@ export default function SignupPage() {
       } else if (errorMessage.includes('이미 등록된 이름')) {
         alert('이미 등록된 이름입니다.')
       } else {
-        alert('회원가입 실패: ' + errorMessage)
+        alert(errorMessage)
       }
     }
   }
