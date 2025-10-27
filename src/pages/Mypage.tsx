@@ -428,14 +428,19 @@ export default function Mypage() {
             삭제한 항목은 복구할 수 없습니다.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>취소</Button>
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
           <Button
             onClick={handleDeleteConfirmed}
+            variant="outlined"
             color="error"
-            autoFocus
           >
             삭제
+          </Button>
+          <Button 
+            onClick={() => setDeleteConfirmOpen(false)}
+            variant="outlined"
+          >
+            취소
           </Button>
         </DialogActions>
       </Dialog>
