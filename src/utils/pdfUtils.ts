@@ -315,8 +315,13 @@ export const downloadAsPDF = async (
     let contentData;
     
     // 문제 타입인 경우 JSON 파싱
-    if (type.includes('문제') || type.includes('선다형') || type.includes('채우기형') || 
-        type.includes('순서') || type.includes('참거짓') || type.includes('답형')) {
+    const normalizedType = (type || '').toLowerCase()
+    
+    // 문제 타입인 경우 JSON 파싱
+    if (normalizedType.includes('문제') || normalizedType.includes('선다형') || 
+        normalizedType.includes('채우기형') || normalizedType.includes('순서') || 
+        normalizedType.includes('참거짓') || normalizedType.includes('답형') || 
+        normalizedType.includes('서술형') || normalizedType.includes('descriptive')) {
       try {
         contentData = JSON.parse(content);
       } catch (error) {
