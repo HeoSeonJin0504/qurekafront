@@ -341,7 +341,7 @@ export default function UploadPage() {
       await downloadAsPDF(
         summaryText,
         fileName || "result",
-        `${dbSummaryTypeKorean} 요약`
+        dbSummaryTypeKorean // "기본 요약", "핵심 요약" 등으로 전달됨
       );
     } catch (error) {
       alert("PDF 다운로드 중 오류가 발생했습니다.");
@@ -356,7 +356,7 @@ export default function UploadPage() {
       await downloadAsPDF(
         questionText,
         fileName || "result",
-        `${aiQuestionPromptKeys_Korean[qTab]} 문제`
+        aiQuestionPromptKeys_Korean[qTab] // "n지선다형", "순서배열형" 등으로 전달됨
       );
     } catch (error) {
       alert("PDF 다운로드 중 오류가 발생했습니다.");

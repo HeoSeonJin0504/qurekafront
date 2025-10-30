@@ -333,19 +333,25 @@ export const downloadAsPDF = async (
       contentData = { text: content };
     }
     
-    // 파일명에서 특수문자 제거 및 길이 제한
-    const safeFileName = (fileName || 'result')
-      .replace(/[^\w\s가-힣]/g, '_')
-      .substring(0, 30);
-    
-    // 타입에서 특수문자 제거 및 길이 제한  
-    const safeType = (type || '')
+    // 파일명에서 확장자 제거 및 정제
+    const cleanFileName = (fileName || 'result')
       .replace(/\.[^.]*$/, '') // 확장자 제거
-      .replace(/[^\w\s가-힣]/g, '_')
-      .substring(0, 20);
+      .replace(/[^\w\s가-힣]/g, '_') // 특수문자를 언더스코어로 변경
+      .replace(/\s+/g, '_') // 공백을 언더스코어로 변경
+      .replace(/_+/g, '_') // 연속된 언더스코어를 하나로
+      .substring(0, 50); // 길이 제한
+    
+    // 타입에서 불필요한 부분 제거 및 정제
+    const cleanType = (type || '')
+      .replace(/\.[^.]*$/, '') // 확장자 제거
+      .replace(/[^\w\s가-힣]/g, '_') // 특수문자를 언더스코어로 변경
+      .replace(/\s+/g, '_') // 공백을 언더스코어로 변경
+      .replace(/_+/g, '_') // 연속된 언더스코어를 하나로
+      .trim()
+      .substring(0, 30); // 길이 제한
     
     // 첫 페이지 헤더 추가
-    await addHeader(`${safeFileName} - ${safeType}`);
+    await addHeader(`${cleanFileName} - ${cleanType}`);
     let currentY = margin.top + 20;
     let pageNum = 1;
     
@@ -361,7 +367,7 @@ export const downloadAsPDF = async (
           async () => {
             pageNum++;
             pdf.addPage();
-            await addHeader(`${safeFileName} - ${safeType}`);
+            await addHeader(`${cleanFileName} - ${cleanType}`);
             await addFooter(pageNum);
             return margin.top + 20;
           }
@@ -377,7 +383,7 @@ export const downloadAsPDF = async (
             async () => {
               pageNum++;
               pdf.addPage();
-              await addHeader(`${safeFileName} - ${safeType}`);
+              await addHeader(`${cleanFileName} - ${cleanType}`);
               await addFooter(pageNum);
               return margin.top + 20;
             }
@@ -391,7 +397,7 @@ export const downloadAsPDF = async (
           async () => {
             pageNum++;
             pdf.addPage();
-            await addHeader(`${safeFileName} - ${safeType}`);
+            await addHeader(`${cleanFileName} - ${cleanType}`);
             await addFooter(pageNum);
             return margin.top + 20;
           }
@@ -401,8 +407,11 @@ export const downloadAsPDF = async (
     
     await renderKoreanQuestions();
     
-    // PDF 저장
-    const outputFileName = `${safeFileName}_${safeType}`;
+    // PDF 저장 - 깔끔한 파일명으로
+    const outputFileName = cleanType 
+      ? `${cleanFileName}_${cleanType}.pdf`
+      : `${cleanFileName}.pdf`;
+    
     pdf.save(outputFileName);
     
   } catch (error) {
