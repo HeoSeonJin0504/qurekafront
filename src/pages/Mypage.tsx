@@ -236,19 +236,21 @@ export default function Mypage() {
   };
 
   // PDF 다운로드 함수
-  const handleDownloadPDF = async (item: FileItem | QuestionItem) => {
+  const handleDownloadPDF = async (item: FileItem | QuestionItem, skipLoading?: boolean) => {
     try {
-      setDownloadingPdf(true);
+      if (!skipLoading) {
+        setDownloadingPdf(true);
+      }
       if ('rawJson' in item && item.rawJson) {
         await downloadAsPDF(
           item.rawJson,
-          item.displayName || item.name || 'question',  // displayName 우선 사용
+          item.displayName || item.name || 'question',
           (item as QuestionItem).displayType || '문제'
         );
       } else {
         await downloadAsPDF(
           item.text,
-          item.displayName || item.name || 'summary',  // displayName 우선 사용
+          item.displayName || item.name || 'summary',
           (item as FileItem).summaryType || '요약'
         );
       }
@@ -256,7 +258,9 @@ export default function Mypage() {
       console.error('PDF 다운로드 오류:', error);
       alert('PDF 다운로드 중 오류가 발생했습니다.');
     } finally {
-      setDownloadingPdf(false);
+      if (!skipLoading) {
+        setDownloadingPdf(false);
+      }
     }
   };
 
@@ -276,7 +280,6 @@ export default function Mypage() {
   return (
     <Box sx={{ bgcolor: "background.paper", minHeight: "100vh", position: "relative" }}>
       <Header />
-      {/* PageNavigator 컴포넌트 추가 */}
       <PageNavigator />
       
       {/* PDF 다운로드 중 로딩 오버레이 */}
@@ -292,12 +295,12 @@ export default function Mypage() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
             zIndex: 1500,
           }}
         >
           <CircularProgress size={60} />
-          <Typography variant="h6" sx={{ mt: 2 }}>
+          <Typography variant="h6" sx={{ mt: 2, fontWeight: 'medium' }}>
             PDF 생성 중...
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

@@ -14,7 +14,7 @@ interface QuestionDetailDialogProps {
   item: FileItem | QuestionItem | null
   dialogTitle: string
   dialogText: string
-  onDownload: (item: FileItem | QuestionItem) => void | Promise<void>
+  onDownload: (item: FileItem | QuestionItem, skipLoading?: boolean) => void | Promise<void>
 }
 
 export default function QuestionDetailDialog({
@@ -125,13 +125,15 @@ export default function QuestionDetailDialog({
 
   const handleDownloadPDF = async () => {
     if (!item) return
-    setDownloadingPdf(true) // 다운로드 시작
+    setDownloadingPdf(true)
     try {
-      await Promise.resolve(onDownload(item))
+      // skipLoading을 true로 전달하여 Mypage의 로딩 UI를 건너뜀
+      await Promise.resolve(onDownload(item, true))
     } catch (error) {
       console.error('PDF 다운로드 오류:', error)
+      alert('PDF 다운로드 중 오류가 발생했습니다.')
     } finally {
-      setDownloadingPdf(false) // 다운로드 완료
+      setDownloadingPdf(false)
     }
   }
 
@@ -170,12 +172,18 @@ export default function QuestionDetailDialog({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
             zIndex: 2000,
+            borderRadius: 1,
           }}
         >
-          <CircularProgress size={40} />
-          <Typography variant="body1" sx={{ mt: 2 }}>PDF 생성 중...</Typography>
+          <CircularProgress size={50} />
+          <Typography variant="body1" sx={{ mt: 2, fontWeight: 'medium' }}>
+            PDF 생성 중...
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            잠시만 기다려 주세요
+          </Typography>
         </Box>
       )}
       
