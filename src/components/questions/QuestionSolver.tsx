@@ -130,7 +130,19 @@ const compareAnswers = {
     return userAnswer === processedCorrectAnswer;
   },
   
-  true_false: (userAnswer: any, correctAnswer: any) => userAnswer === correctAnswer,
+  true_false: (userAnswer: any, correctAnswer: any) => {
+    // boolean 타입으로 확실하게 변환하여 비교
+    const normalizedUserAnswer = Boolean(userAnswer);
+    const normalizedCorrectAnswer = Boolean(correctAnswer);
+    console.log('true_false 비교:', { 
+      userAnswer, 
+      correctAnswer, 
+      normalizedUserAnswer, 
+      normalizedCorrectAnswer,
+      result: normalizedUserAnswer === normalizedCorrectAnswer 
+    });
+    return normalizedUserAnswer === normalizedCorrectAnswer;
+  },
   
   sequence: (userAnswer: any, correctSequence: any[]) => {
     if (!Array.isArray(userAnswer) || !Array.isArray(correctSequence)) return false;
@@ -255,10 +267,12 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
   }, [currentQuestionIndex]);
 
   const isCorrect = useMemo((): boolean => {
-    if (!parsedData || !userAnswers[currentQuestionIndex]) return false;
+    if (!parsedData || userAnswers[currentQuestionIndex] === null) return false;
     
     const userAnswer = userAnswers[currentQuestionIndex];
     const type = parsedData.type as keyof typeof compareAnswers;
+    
+    console.log('isCorrect 계산:', { type, userAnswer, currentQuestion });
     
     switch (type) {
       case 'multiple_choice':

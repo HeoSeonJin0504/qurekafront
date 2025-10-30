@@ -39,14 +39,19 @@ export default function TrueFalseQuestion({
   const getButtonStyle = (value: boolean) => {
     // 결과 표시 중일 때
     if (showResult) {
-      // 선택된 버튼만 배경색 유지
-      if (userAnswer === value) {
+      const isThisButtonSelected = userAnswer === value;
+
+      // 선택한 버튼
+      if (isThisButtonSelected) {
         return {
           bgcolor: value ? 'primary.main' : 'error.main',
           color: 'white',
+          border: 3,
+          borderColor: '#424242', // 짙은 회색 테두리
         };
       }
-      // 선택되지 않은 버튼은 투명하게
+
+      // 선택되지 않은 버튼 (테두리 없음)
       return {
         bgcolor: 'transparent',
         color: value ? 'primary.main' : 'error.main',
@@ -64,7 +69,7 @@ export default function TrueFalseQuestion({
         borderColor: value ? 'primary.main' : 'error.main',
       };
     }
-    // 선택되었을 때
+    // 선택되었을 때 (테두리 없음)
     return {
       bgcolor: value ? 'primary.main' : 'error.main',
       color: 'white',
