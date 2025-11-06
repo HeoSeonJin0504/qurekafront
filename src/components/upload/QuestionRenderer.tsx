@@ -22,7 +22,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         문제 {index + 1}: {question.question_text}
       </Typography>
-      
+
       {question.options && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>보기:</Typography>
@@ -58,7 +58,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         문제 {index + 1}: {question.question_text}
       </Typography>
-      
+
       {question.items && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>선택지:</Typography>
@@ -94,7 +94,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         문제 {index + 1}: {question.question_text}
       </Typography>
-      
+
       <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
         보기: 참 / 거짓
       </Typography>
@@ -123,11 +123,12 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         문제 {index + 1}: {question.question_text}
       </Typography>
-      
-      {question.blanks && question.blanks[0]?.options && (
+
+      {/* 백엔드 구조: options 배열 표시 */}
+      {question.options && (
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>보기:</Typography>
-          {question.blanks[0].options.map((option: any, optIndex: number) => (
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>선택지:</Typography>
+          {question.options.map((option: any, optIndex: number) => (
             <Typography key={optIndex} variant="body1" sx={{ ml: 2, mb: 0.5 }}>
               {option.id}. {option.text}
             </Typography>
@@ -137,7 +138,10 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
 
       <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText' }}>
-          답: {question.blanks?.[0]?.correct_answer}
+          {/* 백엔드 구조: correct_answers 배열 표시 */}
+          답: {Array.isArray(question.correct_answers)
+            ? question.correct_answers.join(', ')
+            : question.correct_answers}
         </Typography>
       </Box>
 
@@ -159,7 +163,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         문제 {index + 1}: {question.question_text}
       </Typography>
-      
+
       <Box sx={{ bgcolor: 'success.light', p: 2, borderRadius: 1, mb: 2 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.contrastText', mb: 1 }}>
           답: {question.correct_answer}
@@ -189,7 +193,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         문제 {index + 1}: {question.question_text}
       </Typography>
-      
+
       {question.answer_keywords && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>채점 키워드:</Typography>
@@ -236,7 +240,22 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
         throw new Error('문제 내용을 찾을 수 없습니다.');
       }
 
-      // n지 선다형
+      // 빈칸 채우기형 (백엔드 구조: options + correct_answers 배열)
+      if (question.options && Array.isArray(question.correct_answers) && question.correct_answers.length > 0) {
+        if (!Array.isArray(question.options) || question.options.length === 0) {
+          throw new Error('선택지 정보가 올바르지 않습니다.');
+        }
+        // options 배열의 각 항목이 id와 text를 가지고 있는지 검증
+        const hasInvalidOption = question.options.some(
+          (opt: any) => !opt.id || !opt.text
+        );
+        if (hasInvalidOption) {
+          throw new Error('선택지 형식이 올바르지 않습니다.');
+        }
+        return renderFillInTheBlank(question, index)
+      }
+
+      // n지 선다형 (correct_answer가 문자열)
       if (question.options && question.correct_answer && typeof question.correct_answer === 'string') {
         if (!Array.isArray(question.options) || question.options.length === 0) {
           throw new Error('선택지 정보가 올바르지 않습니다.');
@@ -250,6 +269,7 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
         }
         return renderMultipleChoice(question, index)
       }
+
       // 순서 배열형
       if (question.items && question.correct_sequence) {
         if (!Array.isArray(question.items) || !Array.isArray(question.correct_sequence)) {
@@ -264,11 +284,13 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
         }
         return renderSequence(question, index)
       }
+
       // 참거짓형
       if (typeof question.correct_answer === 'boolean') {
         return renderTrueFalse(question, index)
       }
-      // 빈칸 채우기형
+
+      // 빈칸 채우기형 (기존 구조 - 하위 호환성)
       if (question.blanks) {
         if (!Array.isArray(question.blanks) || question.blanks.length === 0) {
           throw new Error('빈칸 정보가 올바르지 않습니다.');
@@ -282,10 +304,12 @@ export default function QuestionRenderer({ questions }: QuestionRendererProps) {
         }
         return renderFillInTheBlank(question, index)
       }
+
       // 서술형
       if (question.answer_keywords || question.model_answer) {
         return renderDescriptive(question, index)
       }
+
       // 단답형 (기본)
       if (question.correct_answer) {
         return renderShortAnswer(question, index)

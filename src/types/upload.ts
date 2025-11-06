@@ -26,6 +26,7 @@ export interface Question {
   question_text: string
   options?: Array<{ id: string; text: string }>
   correct_answer?: string | boolean
+  correct_answers?: string[]
   items?: Array<{ id: string; text: string }>
   correct_sequence?: string[]
   blanks?: Array<{ correct_answer: string; options?: Array<{ id: string; text: string }> }>
