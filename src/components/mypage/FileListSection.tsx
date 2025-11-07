@@ -20,10 +20,11 @@ interface FileListSectionProps {
   onView: (item: FileItem | QuestionItem) => void
   onDelete?: (item: FileItem | QuestionItem) => void
   onDownload: (item: FileItem | QuestionItem) => void
+  onRename?: (item: FileItem | QuestionItem) => void
 }
 
 export default function FileListSection({
-  title, titleVariant = 'h6', items, currentPage, onPageChange, onView, onDelete, onDownload
+  title, titleVariant = 'h6', items, currentPage, onPageChange, onView, onDelete, onDownload, onRename
 }: FileListSectionProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [activeItem, setActiveItem] = useState<FileItem | QuestionItem | null>(null)
@@ -166,6 +167,16 @@ export default function FileListSection({
         }}>
           PDF 다운로드
         </MenuItem>
+        
+        {onRename && activeItem && (
+          <MenuItem onClick={(e) => {
+            e.stopPropagation()
+            onRename(activeItem)
+            handleMenuClose()
+          }}>
+            이름 변경
+          </MenuItem>
+        )}
         
         {onDelete && activeItem && (
           <MenuItem onClick={(e) => {

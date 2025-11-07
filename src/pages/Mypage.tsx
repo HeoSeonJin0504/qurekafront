@@ -24,6 +24,7 @@ import FileListSection from "../components/mypage/FileListSection";
 import QuestionDetailDialog from "../components/mypage/QuestionDetailDialog";
 import { downloadAsPDF } from "../utils/pdfUtils";
 import PageNavigator from "../components/common/PageNavigator"; // 추가 임포트
+import RenameDialog from "../components/mypage/RenameDialog";
 
 export default function Mypage() {
   const { user } = useAuth();
@@ -264,6 +265,67 @@ export default function Mypage() {
     }
   };
 
+  // 이름 변경 관련 상태 추가
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [itemToRename, setItemToRename] = useState<{
+    item: FileItem | QuestionItem;
+    type: "summary" | "question";
+  } | null>(null);
+
+  // 이름 변경 다이얼로그 열기
+  const handleRenameClick = (item: FileItem | QuestionItem, type: "summary" | "question") => {
+    setItemToRename({ item, type });
+    setRenameDialogOpen(true);
+  };
+
+  // 이름 변경 확인 처리
+  const handleRenameConfirm = async (newName: string) => {
+    if (!itemToRename) return;
+
+    const { item, type } = itemToRename;
+
+    try {
+      if (type === "summary") {
+        await summaryAPI.updateSummaryName(item.id, newName);
+        setSummaryItems((prev) =>
+          prev.map((s) =>
+            s.id === item.id ? { ...s, displayName: newName } : s
+          )
+        );
+        setSnackbar({
+          open: true,
+          message: "요약 이름이 변경되었습니다.",
+          severity: "success",
+        });
+      } else {
+        await questionAPI.updateQuestionName(item.id, newName);
+        setQuestionItems((prev) =>
+          prev.map((q) =>
+            q.id === item.id ? { ...q, displayName: newName } : q
+          )
+        );
+        setSnackbar({
+          open: true,
+          message: "문제 이름이 변경되었습니다.",
+          severity: "success",
+        });
+      }
+      
+      // 활성 뷰 아이템이 변경된 아이템이면 업데이트
+      if (activeViewItem && activeViewItem.id === item.id) {
+        setActiveViewItem({ ...activeViewItem, displayName: newName });
+        setDialogTitle(newName);
+      }
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || `${type === "summary" ? "요약" : "문제"} 이름 변경에 실패했습니다.`,
+        severity: "error",
+      });
+      throw error;
+    }
+  };
+
   if (loading)
     return (
       <Box textAlign="center" mt={8}>
@@ -389,6 +451,7 @@ export default function Mypage() {
           onView={handleOpenDialog}
           onDelete={(item) => handleDeleteConfirm(item.id, "summary")}
           onDownload={handleDownloadPDF}
+          onRename={(item) => handleRenameClick(item, "summary")}
         />
 
         <FileListSection
@@ -400,6 +463,7 @@ export default function Mypage() {
           onView={handleOpenDialog}
           onDelete={(item) => handleDeleteConfirm(item.id, "question")}
           onDownload={handleDownloadPDF}
+          onRename={(item) => handleRenameClick(item, "question")}
         />
       </Box>
 
@@ -411,6 +475,22 @@ export default function Mypage() {
         dialogTitle={dialogTitle}
         dialogText={dialogText}
         onDownload={handleDownloadPDF}
+        onRename={(item) => {
+          const type = summaryItems.find(s => s.id === item.id) ? "summary" : "question";
+          handleRenameClick(item, type);
+        }}
+      />
+
+      {/* 이름 변경 다이얼로그 */}
+      <RenameDialog
+        open={renameDialogOpen}
+        onClose={() => {
+          setRenameDialogOpen(false);
+          setItemToRename(null);
+        }}
+        currentName={itemToRename?.item.displayName || ""}
+        itemType={itemToRename?.type || "summary"}
+        onConfirm={handleRenameConfirm}
       />
 
       {/* 삭제 확인 다이얼로그 */}

@@ -15,10 +15,11 @@ interface QuestionDetailDialogProps {
   dialogTitle: string
   dialogText: string
   onDownload: (item: FileItem | QuestionItem, skipLoading?: boolean) => void | Promise<void>
+  onRename?: (item: FileItem | QuestionItem) => void
 }
 
 export default function QuestionDetailDialog({
-  open, onClose, item, dialogTitle, dialogText, onDownload
+  open, onClose, item, dialogTitle, dialogText, onDownload, onRename
 }: QuestionDetailDialogProps) {
   const [parsedQuestions, setParsedQuestions] = useState<Question[]>([])
   const [isJsonFormat, setIsJsonFormat] = useState(false)
@@ -226,15 +227,31 @@ export default function QuestionDetailDialog({
         )}
       </DialogContent>
       
-      <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
+      <DialogActions sx={{ justifyContent: 'flex-end', px: 3, py: 2, gap: 1 }}>
+        {onRename && item && (
+          <Button
+            onClick={() => {
+              onRename(item)
+              // onClose() 제거 - 다이얼로그를 닫지 않음
+            }}
+            variant="outlined"
+            color="primary"
+          >
+            이름 변경
+          </Button>
+        )}
         <Button 
           onClick={handleDownloadTxt} 
-          variant="contained"
+          variant="outlined"
           color="primary"
         >
           텍스트 다운로드
         </Button>
-        <Button onClick={handleDownloadPDF} variant="contained" color="primary">
+        <Button 
+          onClick={handleDownloadPDF} 
+          variant="outlined" 
+          color="primary"
+        >
           PDF 다운로드
         </Button>
       </DialogActions>

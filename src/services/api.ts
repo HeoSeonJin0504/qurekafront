@@ -313,7 +313,11 @@ export const summaryAPI = {
   },
   
   getSummaryMetadata: (userId: number) =>
-    backendAPI.get(`/summaries/user/${userId}/meta`)
+    backendAPI.get(`/summaries/user/${userId}/meta`),
+  
+  // 요약 이름 변경 - /api 접두사 제거
+  updateSummaryName: (selectionId: number, summaryName: string) =>
+    backendAPI.patch(`/summaries/${selectionId}/name`, { summaryName })
 };
 
 // ─── 문제 저장·조회·삭제 API (Node.js 백엔드) ─────────────────────────────────────────
@@ -362,7 +366,11 @@ export const questionAPI = {
     }`;
     
     return backendAPI.get(url);
-  }
+  },
+  
+  // 문제 이름 변경 - /api 접두사 제거
+  updateQuestionName: (selectionId: number, questionName: string) =>
+    backendAPI.patch(`/questions/${selectionId}/name`, { questionName })
 };
 
 // 요약 및 문제 생성 관련 통합 API 추가
