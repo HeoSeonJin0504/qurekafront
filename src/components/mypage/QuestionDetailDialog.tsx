@@ -43,22 +43,55 @@ export default function QuestionDetailDialog({
             let questionText = `[문제 ${index + 1}] ${q.question_text}\n\n`
             
             // 선다형 문제 옵션 추가
-            if (q.options && Array.isArray(q.options)) {
+            if (q.options && Array.isArray(q.options) && q.correct_answer && typeof q.correct_answer === 'string') {
               questionText += q.options.map((opt) => `${opt.id}. ${opt.text}`).join('\n') + '\n\n'
-            }
-            
-            // 순서형 문제 항목 추가
-            if (q.items && Array.isArray(q.items)) {
-              questionText += q.items.map((item) => `${item.id}. ${item.text}`).join('\n') + '\n\n'
-            }
-            
-            // 정답 추가
-            if (q.correct_answer !== undefined) {
               questionText += `정답: ${q.correct_answer}\n`
             }
-            
-            if (q.correct_sequence) {
-              questionText += `정답 순서: ${q.correct_sequence.join(' -> ')}\n`
+            // 빈칸 채우기형 문제 (백엔드 구조: options + correct_answers)
+            else if (q.options && Array.isArray(q.options) && q.correct_answers && Array.isArray(q.correct_answers)) {
+              questionText += '보기:\n'
+              questionText += q.options.map((opt) => `${opt.id}. ${opt.text}`).join('\n') + '\n\n'
+              questionText += `정답: ${q.correct_answers.join(', ')}\n`
+            }
+            // 빈칸 채우기형 문제 (기존 구조: blanks)
+            else if (q.blanks && Array.isArray(q.blanks)) {
+              if (q.blanks[0]?.options && Array.isArray(q.blanks[0].options)) {
+                questionText += '보기:\n'
+                questionText += q.blanks[0].options.map((opt) => `${opt.id}. ${opt.text}`).join('\n') + '\n\n'
+              }
+              const answers = q.blanks.map(blank => blank.correct_answer).filter(Boolean)
+              if (answers.length > 0) {
+                questionText += `정답: ${answers.join(', ')}\n`
+              }
+            }
+            // 순서형 문제 항목 추가
+            else if (q.items && Array.isArray(q.items)) {
+              questionText += '선택지:\n'
+              questionText += q.items.map((item) => `${item.id}. ${item.text}`).join('\n') + '\n\n'
+              if (q.correct_sequence) {
+                questionText += `정답 순서: ${q.correct_sequence.join(' -> ')}\n`
+              }
+            }
+            // 참거짓형
+            else if (typeof q.correct_answer === 'boolean') {
+              questionText += `보기: 참 / 거짓\n\n`
+              questionText += `정답: ${q.correct_answer ? '참' : '거짓'}\n`
+            }
+            // 서술형
+            else if (q.answer_keywords || q.model_answer) {
+              if (q.answer_keywords && Array.isArray(q.answer_keywords)) {
+                questionText += `채점 키워드: ${q.answer_keywords.join(', ')}\n`
+              }
+              if (q.model_answer) {
+                questionText += `\n모범답안: ${q.model_answer}\n`
+              }
+            }
+            // 단답형
+            else if (q.correct_answer !== undefined) {
+              questionText += `정답: ${q.correct_answer}\n`
+              if (q.alternative_answers && Array.isArray(q.alternative_answers) && q.alternative_answers.length > 0) {
+                questionText += `대체답안: ${q.alternative_answers.join(', ')}\n`
+              }
             }
             
             // 해설 추가
@@ -73,12 +106,56 @@ export default function QuestionDetailDialog({
         else {
           textContent = `[문제] ${data.question_text || data.question}\n\n`
           
-          if (data.options && Array.isArray(data.options)) {
+          // 선다형
+          if (data.options && Array.isArray(data.options) && data.correct_answer && typeof data.correct_answer === 'string') {
             textContent += data.options.map((opt: any) => `${opt.id}. ${opt.text}`).join('\n') + '\n\n'
-          }
-          
-          if (data.correct_answer !== undefined) {
             textContent += `정답: ${data.correct_answer}\n`
+          }
+          // 빈칸 채우기형 (백엔드 구조)
+          else if (data.options && Array.isArray(data.options) && data.correct_answers && Array.isArray(data.correct_answers)) {
+            textContent += '보기:\n'
+            textContent += data.options.map((opt: any) => `${opt.id}. ${opt.text}`).join('\n') + '\n\n'
+            textContent += `정답: ${data.correct_answers.join(', ')}\n`
+          }
+          // 빈칸 채우기형 (기존 구조)
+          else if (data.blanks && Array.isArray(data.blanks)) {
+            if (data.blanks[0]?.options && Array.isArray(data.blanks[0].options)) {
+              textContent += '보기:\n'
+              textContent += data.blanks[0].options.map((opt: any) => `${opt.id}. ${opt.text}`).join('\n') + '\n\n'
+            }
+            const answers = data.blanks.map((blank: any) => blank.correct_answer).filter(Boolean)
+            if (answers.length > 0) {
+              textContent += `정답: ${answers.join(', ')}\n`
+            }
+          }
+          // 순서형
+          else if (data.items && Array.isArray(data.items)) {
+            textContent += '선택지:\n'
+            textContent += data.items.map((item: any) => `${item.id}. ${item.text}`).join('\n') + '\n\n'
+            if (data.correct_sequence) {
+              textContent += `정답 순서: ${data.correct_sequence.join(' -> ')}\n`
+            }
+          }
+          // 참거짓형
+          else if (typeof data.correct_answer === 'boolean') {
+            textContent += `보기: 참 / 거짓\n\n`
+            textContent += `정답: ${data.correct_answer ? '참' : '거짓'}\n`
+          }
+          // 서술형
+          else if (data.answer_keywords || data.model_answer) {
+            if (data.answer_keywords && Array.isArray(data.answer_keywords)) {
+              textContent += `채점 키워드: ${data.answer_keywords.join(', ')}\n`
+            }
+            if (data.model_answer) {
+              textContent += `\n모범답안: ${data.model_answer}\n`
+            }
+          }
+          // 단답형
+          else if (data.correct_answer !== undefined) {
+            textContent += `정답: ${data.correct_answer}\n`
+            if (data.alternative_answers && Array.isArray(data.alternative_answers) && data.alternative_answers.length > 0) {
+              textContent += `대체답안: ${data.alternative_answers.join(', ')}\n`
+            }
           }
           
           if (data.explanation) {

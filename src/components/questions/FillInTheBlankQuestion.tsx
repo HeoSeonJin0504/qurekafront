@@ -6,8 +6,6 @@ import {
   Paper,
   Alert
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 
 interface FillInTheBlankQuestionProps {
   question: any;
@@ -27,8 +25,9 @@ export default function FillInTheBlankQuestion({
 
   // 백엔드 데이터 구조에서 필드 추출
   const questionText = question.question_text || '';
-  const options = question.options || []; // 선택지 목록 (A, B, C, D)
-  const correctAnswers = question.correct_answers || []; // 정답 배열 (예: ["A", "C"])
+  const options = question.options || question.blanks?.[0]?.options || []; // 백엔드 구조와 기존 구조 모두 지원
+  const correctAnswers = question.correct_answers || 
+                        (question.blanks?.map((b: any) => b.correct_answer) || []); // 정답 배열
   const explanation = question.explanation || ''; // 해설
 
   // 처리된 문제 텍스트를 저장할 상태
@@ -131,31 +130,30 @@ export default function FillInTheBlankQuestion({
   return (
     <Box>
       <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.paper' }}>
-        {/* 인라인 빈칸이 있는 문제 */}
+        {/* 문제 텍스트 */}
         <Typography variant="h6" gutterBottom sx={{ lineHeight: 1.8 }}>
           {processedText}
         </Typography>
 
-        {/* 백엔드 구조: 선택지(options) 표시 */}
+        {/* 선택지(options) 표시 - 백엔드 구조와 기존 구조 모두 지원 */}
         {options.length > 0 && (
-          <Box mt={2} mb={2}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Box mt={2} mb={3}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
               선택지:
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
               {options.map((option: any) => (
                 <Paper
                   key={option.id}
-                  elevation={0}
+                  elevation={1}
                   sx={{
                     p: 1.5,
-                    minWidth: '120px',
                     backgroundColor: 'background.default',
                     border: '1px solid',
                     borderColor: 'divider'
                   }}
                 >
-                  <Typography variant="body2">
+                  <Typography variant="body1">
                     <strong>{option.id}.</strong> {option.text}
                   </Typography>
                 </Paper>
@@ -164,7 +162,7 @@ export default function FillInTheBlankQuestion({
           </Box>
         )}
 
-        {/* 인라인 빈칸이 없거나 별도 빈칸 목록이 있는 경우 */}
+        {/* 빈칸 입력 필드 */}
         {(!questionText?.includes(BLANK_MARKER) || blanks.length > 0) && (
           <Box mt={3}>
             <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
@@ -182,7 +180,9 @@ export default function FillInTheBlankQuestion({
                       display: 'flex',
                       flexDirection: { xs: 'column', sm: 'row' },
                       alignItems: { xs: 'flex-start', sm: 'center' },
-                      backgroundColor: 'background.default',
+                      backgroundColor: showResult 
+                        ? (isBlankCorrect(index) ? 'success.light' : 'error.light')
+                        : 'background.default',
                     }}
                   >
                     <Typography
@@ -212,6 +212,18 @@ export default function FillInTheBlankQuestion({
                           },
                         }}
                       />
+                      {showResult && (
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            mt: 0.5, 
+                            display: 'block',
+                            color: isBlankCorrect(index) ? 'success.dark' : 'error.dark'
+                          }}
+                        >
+                          정답: {correctAnswers[index] || ''}
+                        </Typography>
+                      )}
                     </Box>
                   </Paper>
                 );
@@ -220,27 +232,7 @@ export default function FillInTheBlankQuestion({
           </Box>
         )}
 
-        {/* 백엔드 구조: 해설(explanation) 표시 */}
-        {showResult && explanation && (
-          <Box mt={3}>
-            <Paper
-              elevation={1}
-              sx={{
-                p: 2,
-                backgroundColor: 'info.light',
-                border: '1px solid',
-                borderColor: 'info.main'
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                📖 해설:
-              </Typography>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
-                {explanation}
-              </Typography>
-            </Paper>
-          </Box>
-        )}
+        {/* 해설 부분 제거 - QuestionSolver에서만 표시됨 */}
 
         {blanks.length === 0 && (
           <Alert severity="warning" sx={{ mt: 2 }}>
