@@ -254,14 +254,32 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < parsedData!.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      
+      // 다음 문제의 답안 초기화
+      setUserAnswers(prev => {
+        const newAnswers = [...prev];
+        newAnswers[nextIndex] = null;
+        return newAnswers;
+      });
+      
+      setCurrentQuestionIndex(nextIndex);
       setShowResult(false);
     }
   }, [currentQuestionIndex, parsedData]);
 
   const handlePrevQuestion = useCallback(() => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      const prevIndex = currentQuestionIndex - 1;
+      
+      // 이전 문제의 답안 초기화
+      setUserAnswers(prev => {
+        const newAnswers = [...prev];
+        newAnswers[prevIndex] = null;
+        return newAnswers;
+      });
+      
+      setCurrentQuestionIndex(prevIndex);
       setShowResult(false);
     }
   }, [currentQuestionIndex]);
@@ -317,6 +335,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     const type = parsedData.type.toLowerCase();
     
     const commonProps = {
+      key: `question-${currentQuestionIndex}`, // 문제 인덱스를 key로 사용
       question: currentQuestion,
       userAnswer: userAnswers[currentQuestionIndex],
       onAnswer: handleAnswer,
