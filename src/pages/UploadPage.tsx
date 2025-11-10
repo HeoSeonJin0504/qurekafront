@@ -113,6 +113,9 @@ export default function UploadPage() {
   // PDF 다운로드 관련 상태 추가
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
+  // 추가: 파일명 에러 상태
+  const [fileNameError, setFileNameError] = useState<string>("");
+
   useEffect(() => {
     // jsPDF 폰트 로드를 조건부로 처리
     const loadFont = async () => {
@@ -140,15 +143,38 @@ export default function UploadPage() {
     loadFont();
   }, []);
 
+  // 파일명 유효성 검사 함수
+  const isValidFileName = (name: string): boolean => {
+    // 확장자 제거
+    const nameWithoutExt = name.substring(0, name.lastIndexOf('.')) || name;
+    // 허용된 특수기호: . , - _ () [] %
+    const validPattern = /^[a-zA-Z0-9가-힣\s.,\-_()[\]%]+$/;
+    return validPattern.test(nameWithoutExt);
+  };
+
   // handlers
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
+    
+    if (f) {
+      // 파일명 유효성 검사
+      if (!isValidFileName(f.name)) {
+        setFileNameError('파일명에는 . , - _ () [] % 특수기호만 사용할 수 있습니다.');
+        setFile(null);
+        setFileName(null);
+        // 파일 입력 초기화
+        e.target.value = '';
+        return;
+      }
+      setFileNameError('');
+    }
+    
     setFile(f);
     setFileName(f?.name ?? null);
   };
 
   const handleGenerateSummary = async () => {
-    if (!file || !user) return alert("파일 선택 및 로그인 필요");
+    if (!file || !user) return alert("파일을 선택해주세요.");
     setLoadingSum(true);
     try {
       const fd = new FormData();
@@ -486,6 +512,9 @@ export default function UploadPage() {
                 <Typography variant="body2" color="text.secondary">
                   여기를 클릭하거나 파일을 드래그하세요
                 </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  파일명에는 특수기호가 . , - _ ( ) [ ] % 만 허용됩니다.
+                </Typography>
               </Box>
               {fileName && (
                 <Paper elevation={1} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
@@ -493,6 +522,11 @@ export default function UploadPage() {
                     📄 {fileName}
                   </Typography>
                 </Paper>
+              )}
+              {fileNameError && (
+                <Alert severity="error" sx={{ width: '100%', maxWidth: 400 }}>
+                  {fileNameError}
+                </Alert>
               )}
             </Stack>
             <input hidden type="file" onChange={handleFileUpload} />
