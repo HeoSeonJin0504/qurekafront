@@ -29,6 +29,13 @@ export default function RenameDialog({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // 파일명 유효성 검사 함수
+  const isValidFileName = (name: string): boolean => {
+    // 허용된 특수기호: . , - _ () [] %
+    const validPattern = /^[a-zA-Z0-9가-힣\s.,\-_()[\]%]+$/
+    return validPattern.test(name)
+  }
+
   useEffect(() => {
     if (open) {
       setNewName(currentName)
@@ -41,6 +48,11 @@ export default function RenameDialog({
     
     if (!trimmedName) {
       setError('이름을 입력해주세요.')
+      return
+    }
+
+    if (!isValidFileName(trimmedName)) {
+      setError('파일명에는 . , - _ () [] % 특수기호만 사용할 수 있습니다.')
       return
     }
 
@@ -62,6 +74,18 @@ export default function RenameDialog({
     }
   }
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setNewName(value)
+    
+    // 실시간 유효성 검사
+    if (value.trim() && !isValidFileName(value)) {
+      setError('파일명에는 . , - _ () [] % 특수기호만 사용할 수 있습니다.')
+    } else {
+      setError('')
+    }
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !loading) {
       handleConfirm()
@@ -78,13 +102,15 @@ export default function RenameDialog({
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             새로운 이름을 입력하세요 (최대 30자)
+            <br />
+            허용된 특수기호: . , - _ ( ) [ ] %
           </Typography>
           
           <TextField
             autoFocus
             fullWidth
             value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            onChange={handleNameChange}
             onKeyPress={handleKeyPress}
             placeholder={`${itemType === 'summary' ? '요약' : '문제'} 이름`}
             error={!!error}
