@@ -66,16 +66,22 @@ const renderTrueFalseHTML = (question: Question, index: number): string => {
 }
 
 const renderFillInTheBlankHTML = (question: Question, index: number): string => {
-  const options = question.blanks && question.blanks[0]?.options?.map(option => 
+  // 백엔드 구조: options 배열 (선택지)
+  const options = question.options?.map(option => 
     `<p style="margin-left:20px;margin-bottom:5px;">${option.id}. ${option.text}</p>`
   ).join('') || '';
+  
+  // 백엔드 구조: correct_answers 배열 (정답) 또는 기존 구조: blanks
+  const answer = Array.isArray(question.correct_answers) 
+    ? question.correct_answers.join(', ')
+    : (question.blanks?.map(b => b.correct_answer).filter(Boolean).join(', ') || '');
   
   return `
     <div style="margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #eee;">
       <h3>문제 ${index + 1}: ${question.question_text}</h3>
-      ${options ? `<div style="margin-top:10px;margin-bottom:10px;"><p style="font-weight:bold;">보기:</p>${options}</div>` : ''}
+      ${options ? `<div style="margin-top:10px;margin-bottom:10px;"><p style="font-weight:bold;">선택지:</p>${options}</div>` : ''}
       <div style="background-color:#e6f7e6;padding:10px;margin-top:10px;border-radius:5px;">
-        <p style="font-weight:bold;">답: ${question.blanks?.[0]?.correct_answer || ''}</p>
+        <p style="font-weight:bold;">답: ${answer}</p>
       </div>
       ${question.explanation ? `
       <div style="background-color:#e6f0ff;padding:10px;margin-top:10px;border-radius:5px;">
@@ -136,6 +142,10 @@ const renderDescriptiveHTML = (question: Question, index: number): string => {
 
 // 문제 유형별 HTML 렌더링 결정 함수
 const renderQuestionHTML = (question: Question, index: number): string => {
+  // 빈칸 채우기형 (백엔드 구조: options + correct_answers)
+  if (question.options && Array.isArray(question.correct_answers) && question.correct_answers.length > 0) {
+    return renderFillInTheBlankHTML(question, index);
+  }
   // n지 선다형
   if (question.options && question.correct_answer && typeof question.correct_answer === 'string') {
     return renderMultipleChoiceHTML(question, index);
@@ -148,7 +158,7 @@ const renderQuestionHTML = (question: Question, index: number): string => {
   if (typeof question.correct_answer === 'boolean') {
     return renderTrueFalseHTML(question, index);
   }
-  // 빈칸 채우기형
+  // 빈칸 채우기형 (기존 구조)
   if (question.blanks) {
     return renderFillInTheBlankHTML(question, index);
   }
@@ -350,7 +360,7 @@ export const downloadAsPDF = async (
       .trim()
       .substring(0, 30); // 길이 제한
     
-    // 첫 페이지 헤더 추가
+    // 첫 페이지 헤더 추가 (헤더에는 유형 표시)
     await addHeader(`${cleanFileName} - ${cleanType}`);
     let currentY = margin.top + 20;
     let pageNum = 1;
@@ -407,10 +417,8 @@ export const downloadAsPDF = async (
     
     await renderKoreanQuestions();
     
-    // PDF 저장 - 깔끔한 파일명으로
-    const outputFileName = cleanType 
-      ? `${cleanFileName}_${cleanType}.pdf`
-      : `${cleanFileName}.pdf`;
+    // PDF 저장 - 파일명에 유형 포함하지 않음
+    const outputFileName = `${cleanFileName}.pdf`;
     
     pdf.save(outputFileName);
     
@@ -783,8 +791,9 @@ const renderKoreanQuestionToPDF = async (
     }
   }
   // 빈칸 채우기형 문제 처리
-  else if (question.blanks) {
-    const options = question.blanks && question.blanks[0]?.options;
+  else if (question.blanks || (question.options && Array.isArray(question.correct_answers))) {
+    // 선택지가 있는 경우 렌더링
+    const options = question.options || (question.blanks && question.blanks[0]?.options);
     
     if (options && options.length > 0) {
       const optionsLabel = document.createElement('div');
@@ -792,7 +801,7 @@ const renderKoreanQuestionToPDF = async (
       optionsLabel.style.fontFamily = 'Arial, sans-serif';
       optionsLabel.style.fontSize = '12px';
       optionsLabel.style.fontWeight = 'bold';
-      optionsLabel.textContent = '보기:';
+      optionsLabel.textContent = '선택지:';
       
       offscreenContainer.appendChild(optionsLabel);
       
@@ -865,8 +874,12 @@ const renderKoreanQuestionToPDF = async (
       }
     }
     
-    // 정답 렌더링
-    currentY = await renderAnswerBlock(pdf, `답: ${question.blanks?.[0]?.correct_answer || ''}`, currentY, margin, pageWidth, pageHeight, addNewPage, offscreenContainer);
+    // 정답 렌더링 - 백엔드 구조와 기존 구조 모두 지원
+    const answer = Array.isArray(question.correct_answers)
+      ? question.correct_answers.join(', ')
+      : (question.blanks?.map(b => b.correct_answer).filter(Boolean).join(', ') || '');
+    
+    currentY = await renderAnswerBlock(pdf, `답: ${answer}`, currentY, margin, pageWidth, pageHeight, addNewPage, offscreenContainer);
     
     if (question.explanation) {
       currentY = await renderExplanationBlock(pdf, question.explanation, currentY, margin, pageWidth, pageHeight, addNewPage, offscreenContainer);
