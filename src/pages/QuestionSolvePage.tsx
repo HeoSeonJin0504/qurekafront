@@ -53,7 +53,8 @@ export default function QuestionSolvePage() {
               const data = JSON.parse(q.question_text);
               return {
                 id: q.selection_id,
-                name: q.file_name,
+                name: q.file_name,  // 원본 파일명
+                displayName: q.question_name || q.file_name,  // 문제 이름 (없으면 파일명)
                 date: date.toLocaleDateString("ko-KR"),
                 time: date.toLocaleTimeString("ko-KR", {
                   hour: "2-digit",
@@ -81,7 +82,8 @@ export default function QuestionSolvePage() {
             } catch {
               return {
                 id: q.selection_id,
-                name: q.file_name,
+                name: q.file_name,  // 원본 파일명
+                displayName: q.question_name || q.file_name,  // 문제 이름 (없으면 파일명)
                 date: date.toLocaleDateString("ko-KR"),
                 time: date.toLocaleTimeString("ko-KR", {
                   hour: "2-digit",
@@ -194,7 +196,7 @@ export default function QuestionSolvePage() {
                         <TableCell>
                           <Box sx={{ display:'flex', alignItems:'center' }}>
                             <PictureAsPdfIcon color="error" sx={{ mr:1 }} />
-                            <Typography noWrap>{item.name}</Typography>
+                            <Typography noWrap>{item.displayName}</Typography>
                           </Box>
                         </TableCell>
                         <TableCell align="center">{item.createdAt}</TableCell>
