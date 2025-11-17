@@ -358,8 +358,29 @@ export default function UploadPage() {
       setFileName(null);
       setSummaryText("");
       setQuestionText("");
-      setIsSummarySelected(false); // 초기화 추가
+      setIsSummarySelected(false);
     } else {
+      // 요약 완료 화면(step 2)에서 이전 버튼 클릭 시 요약 결과 초기화
+      if (mode === 'summary' && activeStep === 2) {
+        setSummaryText("");
+      }
+      // 문제 완료 화면에서 이전 버튼 클릭 시 문제 결과 초기화
+      if (mode === 'summary' && activeStep === 4) {
+        setQuestionText("");
+        setParsedQuestions([]);
+        setIsJsonFormat(false);
+      }
+      if (mode === 'question' && questionSource === 'upload' && activeStep === 2) {
+        setQuestionText("");
+        setParsedQuestions([]);
+        setIsJsonFormat(false);
+      }
+      if (mode === 'question' && questionSource === 'saved' && activeStep === 2) {
+        setQuestionText("");
+        setParsedQuestions([]);
+        setIsJsonFormat(false);
+      }
+      
       setActiveStep((prev) => Math.max(prev - 1, 0));
     }
   };
@@ -377,6 +398,26 @@ export default function UploadPage() {
     setIsSummarySelected(false);
     setParsedQuestions([]);
     setIsJsonFormat(false);
+  };
+
+  // 다시 생성하기 핸들러 추가
+  const handleRegenerate = (type: 'summary' | 'question') => {
+    if (type === 'summary') {
+      // 요약 결과 초기화하고 설정 단계로
+      setSummaryText("");
+      setActiveStep(1);
+    } else {
+      // 문제 결과 초기화하고 설정 단계로
+      setQuestionText("");
+      setParsedQuestions([]);
+      setIsJsonFormat(false);
+      
+      if (mode === 'summary') {
+        setActiveStep(3); // 요약본 및 문제 생성 모드
+      } else if (mode === 'question') {
+        setActiveStep(1); // 바로 문제 생성 모드
+      }
+    }
   };
 
   // 모드 선택 핸들러
@@ -869,7 +910,8 @@ export default function UploadPage() {
                   setSumField={setSumField}
                   sumLevel={sumLevel}
                   setSumLevel={setSumLevel}
-                  sumSentCount={setSumSentCount}
+                  sumSentCount={sumSentCount}  // 수정: 함수가 아닌 값 전달
+                  setSumSentCount={setSumSentCount}
                   sumTopicCount={sumTopicCount}
                   setSumTopicCount={setSumTopicCount}
                   sumKeywordCount={sumKeywordCount}
@@ -888,7 +930,7 @@ export default function UploadPage() {
             <Fade in timeout={500}>
               <Box>
                 {loadingSum ? (
-                  <ParticleLoading message="AI가 문서를 요약하고 있습니다" />
+                  <ParticleLoading message="문서를 요약하고 있습니다" />
                 ) : summaryText ? (
                   <Paper
                     elevation={6}
@@ -949,6 +991,22 @@ export default function UploadPage() {
                           }}
                         >
                           PDF 다운로드
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="secondary"
+                          size="large"
+                          onClick={() => handleRegenerate('summary')}
+                          sx={{
+                            borderRadius: 3,
+                            px: 4,
+                            borderWidth: 2,
+                            "&:hover": { 
+                              borderWidth: 2,
+                            },
+                          }}
+                        >
+                          다시 생성하기
                         </Button>
                         <Button
                           variant="outlined"
@@ -1021,7 +1079,7 @@ export default function UploadPage() {
             <Fade in timeout={500}>
               <Box>
                 {loadingQ ? (
-                  <ParticleLoading message="AI가 문제를 생성하고 있습니다" />
+                  <ParticleLoading message="문제를 생성하고 있습니다" />
                 ) : questionText && isJsonFormat ? (
                   <Paper
                     elevation={6}
@@ -1072,6 +1130,22 @@ export default function UploadPage() {
                           }}
                         >
                           PDF 다운로드
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="secondary"
+                          size="large"
+                          onClick={() => handleRegenerate('question')}
+                          sx={{
+                            borderRadius: 3,
+                            px: 4,
+                            borderWidth: 2,
+                            "&:hover": { 
+                              borderWidth: 2,
+                            },
+                          }}
+                        >
+                          다시 생성하기
                         </Button>
                       </Stack>
                     </Stack>
@@ -1245,7 +1319,7 @@ export default function UploadPage() {
             <Fade in timeout={500}>
               <Box>
                 {loadingQ ? (
-                  <ParticleLoading message="AI가 문제를 생성하고 있습니다" />
+                  <ParticleLoading message="문제를 생성하고 있습니다" />
                 ) : questionText && isJsonFormat ? (
                   <Paper
                     elevation={6}
@@ -1296,6 +1370,22 @@ export default function UploadPage() {
                           }}
                         >
                           PDF 다운로드
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="secondary"
+                          size="large"
+                          onClick={() => handleRegenerate('question')}
+                          sx={{
+                            borderRadius: 3,
+                            px: 4,
+                            borderWidth: 2,
+                            "&:hover": { 
+                              borderWidth: 2,
+                            },
+                          }}
+                        >
+                          다시 생성하기
                         </Button>
                       </Stack>
                     </Stack>
@@ -1464,7 +1554,7 @@ export default function UploadPage() {
             <Fade in timeout={500}>
               <Box>
                 {loadingQ ? (
-                  <ParticleLoading message="AI가 문제를 생성하고 있습니다" />
+                  <ParticleLoading message="문제를 생성하고 있습니다" />
                 ) : questionText && isJsonFormat ? (
                   <Paper
                     elevation={6}
@@ -1515,6 +1605,22 @@ export default function UploadPage() {
                           }}
                         >
                           PDF 다운로드
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="secondary"
+                          size="large"
+                          onClick={() => handleRegenerate('question')}
+                          sx={{
+                            borderRadius: 3,
+                            px: 4,
+                            borderWidth: 2,
+                            "&:hover": { 
+                              borderWidth: 2,
+                            },
+                          }}
+                        >
+                          다시 생성하기
                         </Button>
                       </Stack>
                     </Stack>

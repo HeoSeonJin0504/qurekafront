@@ -22,7 +22,7 @@ interface SummarySettingsProps {
   setSumField: (value: string) => void
   sumLevel: string
   setSumLevel: (value: string) => void
-  sumSentCount: number
+  sumSentCount: number  // 추가
   setSumSentCount: (value: number) => void
   sumTopicCount: number
   setSumTopicCount: (value: number) => void
@@ -41,7 +41,7 @@ export default function SummarySettings({
   setSumField,
   sumLevel,
   setSumLevel,
-  sumSentCount,
+  sumSentCount,  // 추가
   setSumSentCount,
   sumTopicCount,
   setSumTopicCount,
