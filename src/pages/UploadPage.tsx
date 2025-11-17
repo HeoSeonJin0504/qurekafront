@@ -613,7 +613,7 @@ export default function UploadPage() {
                     요약본 및 문제 생성
                   </Typography>
                   <Typography variant="body1" color="text.secondary">
-                    파일을 업로드하여 요약본을 생성합니다
+                    파일을 업로드하여 요약본 및 문제를 생성합니다
                   </Typography>
                 </CardContent>
               </Card>
@@ -643,10 +643,10 @@ export default function UploadPage() {
                     <Quiz sx={{ fontSize: 50 }} />
                   </Avatar>
                   <Typography variant="h4" gutterBottom fontWeight={700}>
-                    바로 문제 생성
+                    문제 생성
                   </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    파일 또는 요약본을 기반으로 문제를 생성합니다
+                  <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                    파일 또는 저장된 요약본으로 문제를 바로 생성합니다
                   </Typography>
                 </CardContent>
               </Card>
@@ -869,8 +869,7 @@ export default function UploadPage() {
                   setSumField={setSumField}
                   sumLevel={sumLevel}
                   setSumLevel={setSumLevel}
-                  sumSentCount={sumSentCount}
-                  setSumSentCount={setSumSentCount}
+                  sumSentCount={setSumSentCount}
                   sumTopicCount={sumTopicCount}
                   setSumTopicCount={setSumTopicCount}
                   sumKeywordCount={sumKeywordCount}
