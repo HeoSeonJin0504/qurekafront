@@ -231,19 +231,18 @@ export default function UploadPage() {
   const [saveDialogType, setSaveDialogType] = useState<'summary' | 'question'>('summary');
   const [openSummaryDialog, setOpenSummaryDialog] = useState(false); // 현재 요약본 보기 다이얼로그 상태 추가
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
-    
-    if (!f) return;
-    
+  // 드래그 상태 추가
+  const [isDragging, setIsDragging] = useState(false);
+
+  // 파일 유효성 검사 함수 (공통)
+  const validateFile = (f: File): boolean => {
     // 파일 확장자 검사 (PDF, PPT, PPTX만 허용)
     const allowedExtensions = ['pdf', 'ppt', 'pptx'];
     const fileExtension = f.name.split('.').pop()?.toLowerCase();
     
     if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
       alert('PDF, PPT, PPTX 파일만 업로드 가능합니다.');
-      e.target.value = ''; // input 초기화
-      return;
+      return false;
     }
     
     // 파일명 유효성 검사 (확장자 제외)
@@ -252,6 +251,18 @@ export default function UploadPage() {
     
     if (!validFileNamePattern.test(fileNameWithoutExt)) {
       alert('파일명에는 한글, 영문, 숫자, 공백, 그리고 . - _ ( ) [ ] % 기호만 사용할 수 있습니다.');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    
+    if (!f) return;
+    
+    if (!validateFile(f)) {
       e.target.value = ''; // input 초기화
       return;
     }
@@ -259,6 +270,48 @@ export default function UploadPage() {
     setFile(f);
     setFileName(f.name);
     if (f) setActiveStep(1);
+  };
+
+  // 드래그 앤 드롭 핸들러 수정
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Paper의 경계를 벗어날 때만 isDragging을 false로 설정
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (!droppedFile) return;
+
+    if (!validateFile(droppedFile)) return;
+
+    setFile(droppedFile);
+    setFileName(droppedFile.name);
+    setActiveStep(1);
   };
 
   const handleNext = () => {
@@ -691,11 +744,18 @@ export default function UploadPage() {
             <Fade in timeout={500}>
               <Paper
                 elevation={6}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 sx={{
                   p: 6,
                   borderRadius: 4,
                   background: "#ffffff",
                   textAlign: "center",
+                  position: "relative",
+                  border: isDragging ? "3px dashed #3b82f6" : "none",
+                  transition: "all 0.3s ease",
                 }}
               >
                 <Box
@@ -708,14 +768,18 @@ export default function UploadPage() {
                     transition: "all 0.3s ease",
                     borderRadius: 3,
                     border: "2px solid",
-                    borderColor: file ? "#10b981" : "#e2e8f0",
-                    background: file
+                    borderColor: isDragging ? "#3b82f6" : (file ? "#10b981" : "#e2e8f0"),
+                    background: isDragging
+                      ? "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(8, 145, 178, 0.1) 100%)"
+                      : file
                       ? "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%)"
                       : "linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(8, 145, 178, 0.02) 100%)",
                     "&:hover": {
-                      borderColor: file ? "#059669" : "#3b82f6",
-                      transform: "translateY(-4px)",
-                      boxShadow: file 
+                      borderColor: isDragging ? "#3b82f6" : (file ? "#059669" : "#3b82f6"),
+                      transform: isDragging ? "none" : "translateY(-4px)",
+                      boxShadow: isDragging
+                        ? "0 12px 24px rgba(59, 130, 246, 0.2)"
+                        : file 
                         ? "0 12px 24px rgba(16, 185, 129, 0.15)" 
                         : "0 12px 24px rgba(59, 130, 246, 0.15)",
                     },
@@ -726,30 +790,36 @@ export default function UploadPage() {
                       sx={{
                         width: 120,
                         height: 120,
-                        background: file
+                        background: isDragging
+                          ? "linear-gradient(135deg, #3b82f6 0%, #0891b2 100%)"
+                          : file
                           ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
                           : "linear-gradient(135deg, #3b82f6 0%, #0891b2 100%)",
                         transition: "all 0.3s ease",
+                        transform: isDragging ? "scale(1.1)" : "scale(1)",
                       }}
                     >
-                      {file ? (
+                      {file && !isDragging ? (
                         <CheckCircle sx={{ fontSize: 60 }} />
                       ) : (
                         <CloudUpload sx={{ fontSize: 60 }} />
                       )}
                     </Avatar>
                     <Box>
-                      <Typography variant="h4" gutterBottom fontWeight={700} sx={{ color: file ? "#059669" : "#3b82f6" }}>
-                        {file ? "파일 준비 완료!" : "파일을 선택하세요"}
+                      <Typography variant="h4" gutterBottom fontWeight={700} sx={{ 
+                        color: isDragging ? "#3b82f6" : (file ? "#059669" : "#3b82f6"),
+                        transition: "all 0.3s ease"
+                      }}>
+                        {isDragging ? "파일을 놓으세요" : (file ? "파일 준비 완료!" : "파일을 선택하세요")}
                       </Typography>
                       <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                        PDF, PPT 파일을 드래그하거나 클릭하여 업로드
+                        {isDragging ? "여기에 파일을 놓으세요" : "PDF, PPT 파일을 드래그하거나 클릭하여 업로드"}
                       </Typography>
                       <Typography variant="caption" display="block" color="text.secondary">
                         * 파일명: 한글, 영문, 숫자, 공백, . - _ ( ) [ ] %
                       </Typography>
                     </Box>
-                    {fileName && (
+                    {fileName && !isDragging && (
                       <Paper
                         elevation={3}
                         sx={{
@@ -1026,11 +1096,18 @@ export default function UploadPage() {
             <Fade in timeout={500}>
               <Paper
                 elevation={6}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 sx={{
                   p: 6,
                   borderRadius: 4,
                   background: "#ffffff",
                   textAlign: "center",
+                  position: "relative",
+                  border: isDragging ? "3px dashed #3b82f6" : "none",
+                  transition: "all 0.3s ease",
                 }}
               >
                 <Box
@@ -1043,14 +1120,18 @@ export default function UploadPage() {
                     transition: "all 0.3s ease",
                     borderRadius: 3,
                     border: "2px solid",
-                    borderColor: file ? "#10b981" : "#e2e8f0",
-                    background: file
+                    borderColor: isDragging ? "#3b82f6" : (file ? "#10b981" : "#e2e8f0"),
+                    background: isDragging
+                      ? "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(8, 145, 178, 0.1) 100%)"
+                      : file
                       ? "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%)"
                       : "linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(8, 145, 178, 0.02) 100%)",
                     "&:hover": {
-                      borderColor: file ? "#059669" : "#3b82f6",
-                      transform: "translateY(-4px)",
-                      boxShadow: file 
+                      borderColor: isDragging ? "#3b82f6" : (file ? "#059669" : "#3b82f6"),
+                      transform: isDragging ? "none" : "translateY(-4px)",
+                      boxShadow: isDragging
+                        ? "0 12px 24px rgba(59, 130, 246, 0.2)"
+                        : file 
                         ? "0 12px 24px rgba(16, 185, 129, 0.15)" 
                         : "0 12px 24px rgba(59, 130, 246, 0.15)",
                     },
@@ -1061,30 +1142,36 @@ export default function UploadPage() {
                       sx={{
                         width: 120,
                         height: 120,
-                        background: file
+                        background: isDragging
+                          ? "linear-gradient(135deg, #3b82f6 0%, #0891b2 100%)"
+                          : file
                           ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
                           : "linear-gradient(135deg, #3b82f6 0%, #0891b2 100%)",
                         transition: "all 0.3s ease",
+                        transform: isDragging ? "scale(1.1)" : "scale(1)",
                       }}
                     >
-                      {file ? (
+                      {file && !isDragging ? (
                         <CheckCircle sx={{ fontSize: 60 }} />
                       ) : (
                         <CloudUpload sx={{ fontSize: 60 }} />
                       )}
                     </Avatar>
                     <Box>
-                      <Typography variant="h4" gutterBottom fontWeight={700} sx={{ color: file ? "#059669" : "#3b82f6" }}>
-                        {file ? "파일 준비 완료!" : "파일을 선택하세요"}
+                      <Typography variant="h4" gutterBottom fontWeight={700} sx={{ 
+                        color: isDragging ? "#3b82f6" : (file ? "#059669" : "#3b82f6"),
+                        transition: "all 0.3s ease"
+                      }}>
+                        {isDragging ? "파일을 놓으세요" : (file ? "파일 준비 완료!" : "파일을 선택하세요")}
                       </Typography>
                       <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                        PDF, PPT, PPTX 파일을 드래그하거나 클릭하여 업로드
+                        {isDragging ? "여기에 파일을 놓으세요" : "PDF, PPT, PPTX 파일을 드래그하거나 클릭하여 업로드"}
                       </Typography>
                       <Typography variant="caption" display="block" color="text.secondary">
                         * 파일명: 한글, 영문, 숫자, 공백, . - _ ( ) [ ] %
                       </Typography>
                     </Box>
-                    {fileName && (
+                    {fileName && !isDragging && (
                       <Paper
                         elevation={3}
                         sx={{
