@@ -11,6 +11,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  IconButton,
+  DialogActions,
 } from '@mui/material'
 import { Settings as SettingsIcon } from '@mui/icons-material'
 import SchoolIcon from '@mui/icons-material/School'
@@ -18,6 +20,7 @@ import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
 import { questionLabels, aiQuestionPromptKeys_Korean, FIELD_OPTIONS, LEVEL_OPTIONS } from '../../constants/upload'
 import SavedSummaryDialog from './SavedSummaryDialog'
 import { SummaryItem } from '../../services/api'
+import CloseIcon from '@mui/icons-material/Close'
 
 interface ProblemSettingsProps {
   qTab: number
@@ -37,9 +40,9 @@ interface ProblemSettingsProps {
   summaryText: string
   openSummaryDialog: boolean
   setOpenSummaryDialog: (value: boolean) => void
-  // 새로운 props 추가
   openSavedSummariesDialog: () => void
   hasSummaryText: boolean
+  showSavedSummaryButton?: boolean // 새로운 prop 추가
 }
 
 export default function ProblemSettings({
@@ -62,6 +65,7 @@ export default function ProblemSettings({
   setOpenSummaryDialog,
   openSavedSummariesDialog,
   hasSummaryText,
+  showSavedSummaryButton = true, // 기본값은 true
 }: ProblemSettingsProps) {
   return (
     <>
@@ -147,24 +151,28 @@ export default function ProblemSettings({
           </Box>
           <Box display="flex" gap={1}>
             {hasSummaryText && (
-              <Button 
-                variant="outlined"
-                startIcon={<LibraryBooksIcon />}
-                onClick={() => setOpenSummaryDialog(true)}
-                size="small"
-              >
-                현재 요약본 보기
-              </Button>
+              <>
+                <Button 
+                  variant="outlined"
+                  startIcon={<LibraryBooksIcon />}
+                  onClick={() => setOpenSummaryDialog(true)}
+                  size="small"
+                >
+                  현재 요약본 보기
+                </Button>
+                {showSavedSummaryButton && (
+                  <Button 
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<LibraryBooksIcon />}
+                    onClick={openSavedSummariesDialog}
+                    size="small"
+                  >
+                    저장된 요약 선택하기
+                  </Button>
+                )}
+              </>
             )}
-            <Button 
-              variant="outlined"
-              color="secondary"
-              startIcon={<LibraryBooksIcon />}
-              onClick={openSavedSummariesDialog}
-              size="small"
-            >
-              저장된 요약 선택하기
-            </Button>
           </Box>
         </Typography>
 
@@ -409,12 +417,32 @@ export default function ProblemSettings({
 
       {/* Summary Dialog */}
       <Dialog open={openSummaryDialog} onClose={() => setOpenSummaryDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>요약 내용 보기</DialogTitle>
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">현재 요약본</Typography>
+            <IconButton onClick={() => setOpenSummaryDialog(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
         <DialogContent dividers>
-          <Typography component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
-            {summaryText || '먼저 요약을 생성해 주세요.'}
+          <Typography 
+            component="pre" 
+            sx={{ 
+              whiteSpace: 'pre-wrap',
+              fontFamily: 'inherit',
+              fontSize: '1rem',
+              lineHeight: 1.6,
+            }}
+          >
+            {summaryText || '요약본이 없습니다.'}
           </Typography>
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSummaryDialog(false)} variant="contained">
+            닫기
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   )
