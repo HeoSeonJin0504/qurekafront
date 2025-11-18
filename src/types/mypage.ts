@@ -16,6 +16,7 @@ export interface QuestionItem {
   date: string;
   time: string;
   createdAt: string;
+  favoritedAt?: string;  // 🆕 추가 - 즐겨찾기 추가 날짜
   text: string;
   type?: string;
   displayType?: string;

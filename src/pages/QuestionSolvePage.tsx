@@ -74,6 +74,19 @@ export default function QuestionSolvePage() {
     const date = new Date(q.created_at);
     const questionText = q.question_text;
 
+    // 🆕 즐겨찾기 추가 날짜 처리
+    let favoritedAt = undefined;
+    if (q.favorited_at) {
+      const favoriteDate = new Date(q.favorited_at);
+      favoritedAt = favoriteDate.toLocaleString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
     try {
       const data = JSON.parse(questionText);
       return {
@@ -92,6 +105,7 @@ export default function QuestionSolvePage() {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        favoritedAt,  // 🆕 추가
         text:
           data.question ||
           data.questions?.[0]?.question_text ||
@@ -124,6 +138,7 @@ export default function QuestionSolvePage() {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        favoritedAt,  // 🆕 추가
         text: questionText,
         type: "unknown",
         displayType: q.question_type || "기타",
@@ -531,7 +546,7 @@ export default function QuestionSolvePage() {
                   <TableHead>
                     <TableRow>
                       <TableCell>이름</TableCell>
-                      <TableCell align="center">생성 날짜</TableCell>
+                      <TableCell align="center">즐겨찾기 추가 날짜</TableCell>
                       <TableCell align="center">유형</TableCell>
                       <TableCell align="center">작업</TableCell>
                     </TableRow>
@@ -549,7 +564,7 @@ export default function QuestionSolvePage() {
                           </Box>
                         </TableCell>
                         <TableCell align="center" onClick={() => handleQuestionSelect(item, true)} sx={{ cursor: 'pointer' }}>
-                          {item.createdAt}
+                          {item.favoritedAt || item.createdAt}
                         </TableCell>
                         <TableCell align="center" onClick={() => handleQuestionSelect(item, true)} sx={{ cursor: 'pointer' }}>
                           <Chip 
