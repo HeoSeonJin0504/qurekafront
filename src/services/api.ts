@@ -373,43 +373,71 @@ export const questionAPI = {
     backendAPI.patch(`/questions/${selectionId}/name`, { questionName })
 };
 
-// 요약 및 문제 생성 관련 통합 API 추가
-export const generationAPI = {
-  generateSummary: async (formData: FormData) => {
-    try {
-      const response = await aiAPI.post('/summarize', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'ngrok-skip-browser-warning': '1'
-        },
-        withCredentials: false
-      });
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data.detail || '요약 생성 중 오류가 발생했습니다.');
-      }
-      throw new Error('서버 연결에 실패했습니다.');
-    }
+// ─── 즐겨찾기 API ─────────────────────────────────────────
+export interface FavoriteFolder {
+  folder_id: number;
+  user_id: number;
+  folder_name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  question_count?: number;
+}
+
+export interface FavoriteQuestion {
+  favorite_id: number;
+  user_id: number;
+  folder_id: number;
+  question_id: number;
+  question_index: number;  // 🆕 추가
+  created_at: string;
+}
+
+export const favoriteAPI = {
+  // 즐겨찾기 폴더 목록 조회
+  getFolders: (userId: number) =>
+    backendAPI.get<{ success: boolean; folders: FavoriteFolder[] }>(
+      `/favorites/folders/${userId}`
+    ),
+
+  // 즐겨찾기 폴더 생성
+  createFolder: (data: { userId: number; folderName: string; description?: string }) =>
+    backendAPI.post('/favorites/folders', data),
+
+  // 즐겨찾기 폴더 삭제 - userId 파라미터 추가
+  deleteFolder: (folderId: number, userId: number) =>
+    backendAPI.delete(`/favorites/folders/${folderId}`, {
+      params: { userId }  // Query parameter로 전달
+    }),
+
+  // 즐겨찾기에 문제 추가 - question_index 파라미터 추가
+  addQuestion: (data: { 
+    userId: number; 
+    folderId: number; 
+    questionId: number;
+    questionIndex?: number;  // 🆕 추가 (기본값 0)
+  }) =>
+    backendAPI.post('/favorites/questions', data),
+
+  // 즐겨찾기에서 문제 제거 - userId 파라미터 추가
+  removeQuestion: (favoriteId: number, userId: number) =>
+    backendAPI.delete(`/favorites/questions/${favoriteId}`, {
+      params: { userId }  // Query parameter로 전달
+    }),
+
+  // 특정 폴더의 즐겨찾기 문제 목록
+  getFolderQuestions: (userId: number, folderId: number) =>
+    backendAPI.get(`/favorites/folders/${folderId}/questions/${userId}`),
+
+  // 문제가 즐겨찾기에 있는지 확인 - question_index 포함
+  checkQuestion: (userId: number, questionId: number, questionIndex?: number) => {
+    const params = questionIndex !== undefined ? `?questionIndex=${questionIndex}` : '';
+    return backendAPI.get(`/favorites/check/${userId}/${questionId}${params}`);
   },
 
-  generateQuestion: async (requestData: any) => {
-    try {
-      const response = await aiAPI.post('/generate', requestData, {
-        withCredentials: false,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': '1'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data.detail || '문제 생성 중 오류가 발생했습니다.');
-      }
-      throw new Error('서버 연결에 실패했습니다.');
-    }
-  }
+  // 모든 즐겨찾기 문제 조회 (폴더 구분 없이)
+  getAllFavoriteQuestions: (userId: number) =>
+    backendAPI.get(`/favorites/questions/all/${userId}`)
 };
 
 export default backendAPI;

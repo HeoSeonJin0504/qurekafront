@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Box, Paper, Typography, Button, 
   Divider, Alert, Card, CardContent,
-  CircularProgress
+  CircularProgress, IconButton, Tooltip
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { QuestionItem } from '../../types/mypage';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import TrueFalseQuestion from './TrueFalseQuestion';
@@ -12,9 +14,12 @@ import FillInTheBlankQuestion from './FillInTheBlankQuestion';
 import SequenceQuestion from './SequenceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import DescriptiveQuestion from './DescriptiveQuestion';
+import { favoriteAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface QuestionSolverProps {
   questionItem: QuestionItem;
+  favoritesList?: QuestionItem[];  // 🆕 추가 - 즐겨찾기 목록
   onClose: () => void;
 }
 
@@ -185,21 +190,40 @@ const compareAnswers = {
   }
 };
 
-export default function QuestionSolver({ questionItem, onClose }: QuestionSolverProps) {
+export default function QuestionSolver({ questionItem, favoritesList, onClose }: QuestionSolverProps) {
+  const { user } = useAuth();
   const [parsedData, setParsedData] = useState<ParsedQuestion | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(questionItem.questionIndex || 0);
   const [userAnswers, setUserAnswers] = useState<any[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [parsingError, setParsingError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<number | null>(null);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  
+  // 🆕 현재 문제 항목 상태 추가
+  const [currentQuestionItem, setCurrentQuestionItem] = useState<QuestionItem>(questionItem);
+
+  // 🆕 즐겨찾기 모드인지 확인 (useState보다 먼저 선언)
+  const isFavoriteMode = !!favoritesList && favoritesList.length > 0;
+  
+  // 🆕 현재 즐겨찾기 인덱스 (favoritesList에서의 위치)
+  const [currentFavoriteIndex, setCurrentFavoriteIndex] = useState(() => {
+    if (!isFavoriteMode) return 0;
+    return favoritesList.findIndex(item => 
+      item.id === questionItem.id && 
+      (item.questionIndex === questionItem.questionIndex || (!item.questionIndex && !questionItem.questionIndex))
+    );
+  });
 
   useEffect(() => {
-    if (!questionItem.rawJson) {
+    if (!currentQuestionItem.rawJson) {
       setParsingError('문제 데이터가 유효하지 않습니다.');
       return;
     }
 
     try {
-      const rawData = JSON.parse(questionItem.rawJson);
+      const rawData = JSON.parse(currentQuestionItem.rawJson);
       const parsedQuestion: ParsedQuestion = {
         type: rawData.type || 'multiple_choice',
         questions: []
@@ -210,30 +234,25 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         parsedQuestion.questions = rawData.questions;
         
         if (rawData.questions.length > 0) {
-          // 첫 번째 질문의 타입 사용 또는 자동 감지
           parsedQuestion.type = rawData.questions[0].type || 
-            detectQuestionType(rawData.questions[0], questionItem.displayType);
+            detectQuestionType(rawData.questions[0], currentQuestionItem.displayType);
         }
       } else {
-        // 단일 문제 처리
         parsedQuestion.type = rawData.type || 
-          detectQuestionType(rawData, questionItem.displayType);
+          detectQuestionType(rawData, currentQuestionItem.displayType);
         parsedQuestion.questions = [rawData];
       }
 
       parsedQuestion.type = parsedQuestion.type.toLowerCase();
-      
-      // 각 문제 전처리
       parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
 
-      
       setParsedData(parsedQuestion);
       setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
     } catch (error) {
       console.error("문제 파싱 오류:", error);
       setParsingError('문제 데이터 형식이 올바르지 않습니다.');
     }
-  }, [questionItem]);
+  }, [currentQuestionItem]);
 
   const currentQuestion = useMemo(() => 
     parsedData?.questions[currentQuestionIndex],
@@ -253,36 +272,114 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
   }, []);
 
   const handleNextQuestion = useCallback(() => {
-    if (currentQuestionIndex < parsedData!.questions.length - 1) {
-      const nextIndex = currentQuestionIndex + 1;
-      
-      // 다음 문제의 답안 초기화
-      setUserAnswers(prev => {
-        const newAnswers = [...prev];
-        newAnswers[nextIndex] = null;
-        return newAnswers;
-      });
-      
-      setCurrentQuestionIndex(nextIndex);
-      setShowResult(false);
+    if (isFavoriteMode && favoritesList) {
+      if (currentFavoriteIndex < favoritesList.length - 1) {
+        const nextFavorite = favoritesList[currentFavoriteIndex + 1];
+        
+        try {
+          const rawData = JSON.parse(nextFavorite.rawJson || '{}');
+          const parsedQuestion: ParsedQuestion = {
+            type: rawData.type || 'multiple_choice',
+            questions: []
+          };
+
+          if (rawData.questions && Array.isArray(rawData.questions)) {
+            parsedQuestion.questions = rawData.questions;
+            if (rawData.questions.length > 0) {
+              parsedQuestion.type = rawData.questions[0].type || 
+                detectQuestionType(rawData.questions[0], nextFavorite.displayType);
+            }
+          } else {
+            parsedQuestion.type = rawData.type || 
+              detectQuestionType(rawData, nextFavorite.displayType);
+            parsedQuestion.questions = [rawData];
+          }
+
+          parsedQuestion.type = parsedQuestion.type.toLowerCase();
+          parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+
+          // 🔄 상태 업데이트 순서 개선
+          setCurrentQuestionItem(nextFavorite);  // 문제 항목 먼저 업데이트
+          setParsedData(parsedQuestion);
+          setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
+          setCurrentQuestionIndex(nextFavorite.questionIndex || 0);
+          setCurrentFavoriteIndex(currentFavoriteIndex + 1);
+          setShowResult(false);
+        } catch (error) {
+          console.error("문제 파싱 오류:", error);
+          alert('다음 문제를 불러오는데 실패했습니다.');
+        }
+      }
+    } else {
+      if (currentQuestionIndex < parsedData!.questions.length - 1) {
+        const nextIndex = currentQuestionIndex + 1;
+        
+        setUserAnswers(prev => {
+          const newAnswers = [...prev];
+          newAnswers[nextIndex] = null;
+          return newAnswers;
+        });
+        
+        setCurrentQuestionIndex(nextIndex);
+        setShowResult(false);
+      }
     }
-  }, [currentQuestionIndex, parsedData]);
+  }, [currentQuestionIndex, currentFavoriteIndex, parsedData, isFavoriteMode, favoritesList]);
 
   const handlePrevQuestion = useCallback(() => {
-    if (currentQuestionIndex > 0) {
-      const prevIndex = currentQuestionIndex - 1;
-      
-      // 이전 문제의 답안 초기화
-      setUserAnswers(prev => {
-        const newAnswers = [...prev];
-        newAnswers[prevIndex] = null;
-        return newAnswers;
-      });
-      
-      setCurrentQuestionIndex(prevIndex);
-      setShowResult(false);
+    if (isFavoriteMode && favoritesList) {
+      if (currentFavoriteIndex > 0) {
+        const prevFavorite = favoritesList[currentFavoriteIndex - 1];
+        
+        try {
+          const rawData = JSON.parse(prevFavorite.rawJson || '{}');
+          const parsedQuestion: ParsedQuestion = {
+            type: rawData.type || 'multiple_choice',
+            questions: []
+          };
+
+          if (rawData.questions && Array.isArray(rawData.questions)) {
+            parsedQuestion.questions = rawData.questions;
+            if (rawData.questions.length > 0) {
+              parsedQuestion.type = rawData.questions[0].type || 
+                detectQuestionType(rawData.questions[0], prevFavorite.displayType);
+            }
+          } else {
+            parsedQuestion.type = rawData.type || 
+              detectQuestionType(rawData, prevFavorite.displayType);
+            parsedQuestion.questions = [rawData];
+          }
+
+          parsedQuestion.type = parsedQuestion.type.toLowerCase();
+          parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+
+          // 🔄 상태 업데이트 순서 개선
+          setCurrentQuestionItem(prevFavorite);  // 문제 항목 먼저 업데이트
+          setParsedData(parsedQuestion);
+          setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
+          setCurrentQuestionIndex(prevFavorite.questionIndex || 0);
+          setCurrentFavoriteIndex(currentFavoriteIndex - 1);
+          setShowResult(false);
+        } catch (error) {
+          console.error("문제 파싱 오류:", error);
+          alert('이전 문제를 불러오는데 실패했습니다.');
+        }
+      }
+    } else {
+      if (currentQuestionIndex > 0) {
+        const prevIndex = currentQuestionIndex - 1;
+        
+        setUserAnswers(prev => {
+          const newAnswers = [...prev];
+          newAnswers[prevIndex] = null;
+          return newAnswers;
+        });
+        
+        setCurrentQuestionIndex(prevIndex);
+        setShowResult(false);
+      }
     }
-  }, [currentQuestionIndex]);
+  }, [currentQuestionIndex, currentFavoriteIndex, isFavoriteMode, favoritesList]);
 
   const isCorrect = useMemo((): boolean => {
     if (!parsedData || userAnswers[currentQuestionIndex] === null) return false;
@@ -335,7 +432,6 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     const type = parsedData.type.toLowerCase();
     
     const commonProps = {
-      key: `question-${currentQuestionIndex}`, // 문제 인덱스를 key로 사용
       question: currentQuestion,
       userAnswer: userAnswers[currentQuestionIndex],
       onAnswer: handleAnswer,
@@ -343,28 +439,74 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
     };
 
     const componentMap: Record<string, JSX.Element> = {
-      multiple_choice: <MultipleChoiceQuestion {...commonProps} />,
-      true_false: <TrueFalseQuestion {...commonProps} />,
-      sequence: <SequenceQuestion {...commonProps} />,
-      fill_in_the_blank: <FillInTheBlankQuestion {...commonProps} />,
-      short_answer: <ShortAnswerQuestion {...commonProps} />,
-      descriptive: <DescriptiveQuestion {...commonProps} />
+      multiple_choice: <MultipleChoiceQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />,
+      true_false: <TrueFalseQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />,
+      sequence: <SequenceQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />,
+      fill_in_the_blank: <FillInTheBlankQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />,
+      short_answer: <ShortAnswerQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />,
+      descriptive: <DescriptiveQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />
     };
 
     if (componentMap[type]) {
       return componentMap[type];
     }
 
-    // 폴백: displayType 기반 감지
-    if (questionItem.displayType.includes('서술') || 
-        questionItem.name.includes('서술') ||
-        questionItem.displayType.toLowerCase().includes('descriptive')) {
-      return <DescriptiveQuestion {...commonProps} />;
+    // 🔄 currentQuestionItem 사용
+    if (currentQuestionItem.displayType.includes('서술') || 
+        currentQuestionItem.name.includes('서술') ||
+        currentQuestionItem.displayType.toLowerCase().includes('descriptive')) {
+      return <DescriptiveQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />;
     }
 
     console.warn("지원되지 않는 문제 유형:", type);
-    return <ShortAnswerQuestion {...commonProps} />;
-  }, [parsedData, currentQuestion, userAnswers, currentQuestionIndex, handleAnswer, showResult, questionItem]);
+    return <ShortAnswerQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />;
+  }, [parsedData, currentQuestion, userAnswers, currentQuestionIndex, handleAnswer, showResult, currentQuestionItem]);
+
+  // 즐겨찾기 상태 확인 - 🔄 currentQuestionItem 사용
+  useEffect(() => {
+    if (user?.id && currentQuestionItem.id) {
+      favoriteAPI.checkQuestion(user.id, currentQuestionItem.id, currentQuestionIndex)
+        .then((response) => {
+          setIsFavorite(response.data.isFavorite);
+          setFavoriteId(response.data.favoriteId || null);
+        })
+        .catch((error) => {
+          console.error('즐겨찾기 확인 오류:', error);
+        });
+    }
+  }, [user, currentQuestionItem.id, currentQuestionIndex]);
+
+  // 즐겨찾기 토글 핸들러 - 🔄 currentQuestionItem 사용
+  const handleFavoriteToggle = async () => {
+    if (!user?.id) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    setFavoriteLoading(true);
+
+    try {
+      if (isFavorite && favoriteId) {
+        await favoriteAPI.removeQuestion(favoriteId, user.id);
+        setIsFavorite(false);
+        setFavoriteId(null);
+      } else {
+        const response = await favoriteAPI.addQuestion({
+          userId: user.id,
+          folderId: 1,
+          questionId: currentQuestionItem.id,
+          questionIndex: currentQuestionIndex
+        });
+        setIsFavorite(true);
+        setFavoriteId(response.data.favoriteId);
+      }
+    } catch (error: any) {
+      console.error('즐겨찾기 처리 오류:', error);
+      alert(error.response?.data?.message || '즐겨찾기 처리 중 오류가 발생했습니다.');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   if (parsingError) {
     return (
@@ -405,17 +547,36 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
         <Typography variant="h4" sx={{ ml: 2, flexGrow: 1 }}>
           문제 풀기
         </Typography>
+        <Tooltip title={isFavorite ? "이 문제 즐겨찾기 제거" : "이 문제 즐겨찾기 추가"}>
+          <IconButton
+            onClick={handleFavoriteToggle}
+            disabled={favoriteLoading}
+            sx={{ mr: 2 }}
+          >
+            {favoriteLoading ? (
+              <CircularProgress size={24} />
+            ) : isFavorite ? (
+              <StarIcon sx={{ color: '#FFD700', fontSize: 32 }} />
+            ) : (
+              <StarBorderIcon sx={{ fontSize: 32 }} />
+            )}
+          </IconButton>
+        </Tooltip>
         <Typography variant="subtitle1" color="text.secondary">
-          {currentQuestionIndex + 1} / {parsedData.questions.length}
+          {/* 🔄 즐겨찾기 모드일 때 다른 표시 */}
+          {isFavoriteMode 
+            ? `즐겨찾기 ${currentFavoriteIndex + 1} / ${favoritesList.length}`
+            : `${currentQuestionIndex + 1} / ${parsedData?.questions.length || 0}`
+          }
         </Typography>
       </Box>
 
       <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-          파일명: {questionItem.name}
+          파일명: {currentQuestionItem.name}
         </Typography>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          문제 유형: {questionItem.displayType}
+          문제 유형: {currentQuestionItem.displayType}
         </Typography>
         <Divider sx={{ my: 2 }} />
 
@@ -425,7 +586,7 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
           <Button 
             variant="outlined" 
             onClick={handlePrevQuestion}
-            disabled={currentQuestionIndex === 0}
+            disabled={isFavoriteMode ? currentFavoriteIndex === 0 : currentQuestionIndex === 0}
           >
             이전 문제
           </Button>
@@ -444,7 +605,11 @@ export default function QuestionSolver({ questionItem, onClose }: QuestionSolver
               variant="contained" 
               color="primary" 
               onClick={handleNextQuestion}
-              disabled={currentQuestionIndex === parsedData.questions.length - 1}
+              disabled={
+                isFavoriteMode 
+                  ? currentFavoriteIndex === (favoritesList?.length || 0) - 1
+                  : currentQuestionIndex === (parsedData?.questions.length || 0) - 1
+              }
             >
               다음 문제
             </Button>
