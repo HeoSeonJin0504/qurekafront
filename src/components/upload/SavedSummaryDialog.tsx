@@ -153,8 +153,14 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <Typography variant="body2">
-                        {new Date(summary.created_at).toLocaleString('ko-KR')}
+                      <Typography variant="body2" noWrap>
+                        {new Date(summary.created_at).toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }).replace(/\. /g, '-').replace('.', '')}
                       </Typography>
                     </TableCell>
                   </TableRow>
