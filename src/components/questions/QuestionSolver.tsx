@@ -14,18 +14,26 @@ import FillInTheBlankQuestion from './FillInTheBlankQuestion';
 import SequenceQuestion from './SequenceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import DescriptiveQuestion from './DescriptiveQuestion';
+import QuestionResultSummary from './QuestionResultSummary';
 import { favoriteAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface QuestionSolverProps {
   questionItem: QuestionItem;
-  favoritesList?: QuestionItem[];  // 🆕 추가 - 즐겨찾기 목록
+  favoritesList?: QuestionItem[];
   onClose: () => void;
 }
 
 interface ParsedQuestion {
   type: string;
   questions: any[];
+}
+
+// 🆕 문제 결과 인터페이스
+interface QuestionResult {
+  questionIndex: number;
+  isCorrect: boolean;
+  userAnswer: any;
 }
 
 // 타입 감지 유틸리티 함수들
@@ -139,13 +147,6 @@ const compareAnswers = {
     // boolean 타입으로 확실하게 변환하여 비교
     const normalizedUserAnswer = Boolean(userAnswer);
     const normalizedCorrectAnswer = Boolean(correctAnswer);
-    console.log('true_false 비교:', { 
-      userAnswer, 
-      correctAnswer, 
-      normalizedUserAnswer, 
-      normalizedCorrectAnswer,
-      result: normalizedUserAnswer === normalizedCorrectAnswer 
-    });
     return normalizedUserAnswer === normalizedCorrectAnswer;
   },
   
@@ -200,14 +201,15 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteId, setFavoriteId] = useState<number | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  
-  // 🆕 현재 문제 항목 상태 추가
   const [currentQuestionItem, setCurrentQuestionItem] = useState<QuestionItem>(questionItem);
-
-  // 🆕 즐겨찾기 모드인지 확인 (useState보다 먼저 선언)
-  const isFavoriteMode = !!favoritesList && favoritesList.length > 0;
   
-  // 🆕 현재 즐겨찾기 인덱스 (favoritesList에서의 위치)
+  // 🆕 결과 추적 상태
+  const [questionResults, setQuestionResults] = useState<QuestionResult[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
+  const [retryMode, setRetryMode] = useState(false);
+  const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>([]);
+
+  const isFavoriteMode = !!favoritesList && favoritesList.length > 0;
   const [currentFavoriteIndex, setCurrentFavoriteIndex] = useState(() => {
     if (!isFavoriteMode) return 0;
     return favoritesList.findIndex(item => 
@@ -267,64 +269,178 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     });
   }, [currentQuestionIndex]);
 
+  // 🔄 정답 확인 로직을 별도 함수로 분리
+  const checkIfCorrect = useCallback((questionIndex: number): boolean => {
+    if (!parsedData || userAnswers[questionIndex] === null) return false;
+    
+    const userAnswer = userAnswers[questionIndex];
+    const question = parsedData.questions[questionIndex];
+    const type = parsedData.type as keyof typeof compareAnswers;
+    
+    switch (type) {
+      case 'multiple_choice':
+        return compareAnswers.multiple_choice(userAnswer, question.correct_answer);
+      
+      case 'true_false':
+        return compareAnswers.true_false(userAnswer, question.correct_answer);
+      
+      case 'sequence':
+        return compareAnswers.sequence(userAnswer, question.correct_sequence);
+      
+      case 'fill_in_the_blank':
+        return compareAnswers.fill_in_the_blank(userAnswer, question);
+      
+      case 'short_answer':
+        return compareAnswers.short_answer(userAnswer, question);
+      
+      case 'descriptive':
+        return compareAnswers.descriptive(userAnswer, question);
+      
+      default:
+        return false;
+    }
+  }, [parsedData, userAnswers]);
+
   const handleCheckResult = useCallback(() => {
     setShowResult(true);
-  }, []);
+    
+    // 🆕 결과 기록 - checkIfCorrect 사용
+    const isAnswerCorrect = checkIfCorrect(currentQuestionIndex);
+    
+    const result: QuestionResult = {
+      questionIndex: currentQuestionIndex,
+      isCorrect: isAnswerCorrect,
+      userAnswer: userAnswers[currentQuestionIndex]
+    };
+    
+    setQuestionResults(prev => {
+      const newResults = [...prev];
+      const existingIndex = newResults.findIndex(r => r.questionIndex === currentQuestionIndex);
+      if (existingIndex >= 0) {
+        newResults[existingIndex] = result;
+      } else {
+        newResults.push(result);
+      }
+      return newResults;
+    });
+  }, [currentQuestionIndex, userAnswers, checkIfCorrect]);
 
   const handleNextQuestion = useCallback(() => {
     if (isFavoriteMode && favoritesList) {
-      if (currentFavoriteIndex < favoritesList.length - 1) {
-        const nextFavorite = favoritesList[currentFavoriteIndex + 1];
+      // 🔄 재도전 모드일 때
+      if (retryMode && wrongQuestionIndices.length > 0) {
+        const currentWrongIndex = wrongQuestionIndices.findIndex(i => i === currentFavoriteIndex);
         
-        try {
-          const rawData = JSON.parse(nextFavorite.rawJson || '{}');
-          const parsedQuestion: ParsedQuestion = {
-            type: rawData.type || 'multiple_choice',
-            questions: []
-          };
+        if (currentWrongIndex < wrongQuestionIndices.length - 1) {
+          // 다음 틀린 문제로 이동
+          const nextFavoriteIndex = wrongQuestionIndices[currentWrongIndex + 1];
+          const nextFavorite = favoritesList[nextFavoriteIndex];
+          
+          try {
+            const rawData = JSON.parse(nextFavorite.rawJson || '{}');
+            const parsedQuestion: ParsedQuestion = {
+              type: rawData.type || 'multiple_choice',
+              questions: []
+            };
 
-          if (rawData.questions && Array.isArray(rawData.questions)) {
-            parsedQuestion.questions = rawData.questions;
-            if (rawData.questions.length > 0) {
-              parsedQuestion.type = rawData.questions[0].type || 
-                detectQuestionType(rawData.questions[0], nextFavorite.displayType);
+            if (rawData.questions && Array.isArray(rawData.questions)) {
+              parsedQuestion.questions = rawData.questions;
+              if (rawData.questions.length > 0) {
+                parsedQuestion.type = rawData.questions[0].type || 
+                  detectQuestionType(rawData.questions[0], nextFavorite.displayType);
+              }
+            } else {
+              parsedQuestion.type = rawData.type || 
+                detectQuestionType(rawData, nextFavorite.displayType);
+              parsedQuestion.questions = [rawData];
             }
-          } else {
-            parsedQuestion.type = rawData.type || 
-              detectQuestionType(rawData, nextFavorite.displayType);
-            parsedQuestion.questions = [rawData];
+
+            parsedQuestion.type = parsedQuestion.type.toLowerCase();
+            parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+
+            setCurrentQuestionItem(nextFavorite);
+            setParsedData(parsedQuestion);
+            setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
+            setCurrentQuestionIndex(nextFavorite.questionIndex || 0);
+            setCurrentFavoriteIndex(nextFavoriteIndex);
+            setShowResult(false);
+          } catch (error) {
+            console.error("문제 파싱 오류:", error);
+            alert('다음 문제를 불러오는데 실패했습니다.');
           }
+        } else {
+          // 재도전 완료
+          setShowSummary(true);
+        }
+      } else {
+        // 일반 모드 - 다음 즐겨찾기 문제
+        if (currentFavoriteIndex < favoritesList.length - 1) {
+          const nextFavorite = favoritesList[currentFavoriteIndex + 1];
+          
+          try {
+            const rawData = JSON.parse(nextFavorite.rawJson || '{}');
+            const parsedQuestion: ParsedQuestion = {
+              type: rawData.type || 'multiple_choice',
+              questions: []
+            };
 
-          parsedQuestion.type = parsedQuestion.type.toLowerCase();
-          parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+            if (rawData.questions && Array.isArray(rawData.questions)) {
+              parsedQuestion.questions = rawData.questions;
+              if (rawData.questions.length > 0) {
+                parsedQuestion.type = rawData.questions[0].type || 
+                  detectQuestionType(rawData.questions[0], nextFavorite.displayType);
+              }
+            } else {
+              parsedQuestion.type = rawData.type || 
+                detectQuestionType(rawData, nextFavorite.displayType);
+              parsedQuestion.questions = [rawData];
+            }
 
-          // 🔄 상태 업데이트 순서 개선
-          setCurrentQuestionItem(nextFavorite);  // 문제 항목 먼저 업데이트
-          setParsedData(parsedQuestion);
-          setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
-          setCurrentQuestionIndex(nextFavorite.questionIndex || 0);
-          setCurrentFavoriteIndex(currentFavoriteIndex + 1);
-          setShowResult(false);
-        } catch (error) {
-          console.error("문제 파싱 오류:", error);
-          alert('다음 문제를 불러오는데 실패했습니다.');
+            parsedQuestion.type = parsedQuestion.type.toLowerCase();
+            parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+
+            setCurrentQuestionItem(nextFavorite);
+            setParsedData(parsedQuestion);
+            setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
+            setCurrentQuestionIndex(nextFavorite.questionIndex || 0);
+            setCurrentFavoriteIndex(currentFavoriteIndex + 1);
+            setShowResult(false);
+          } catch (error) {
+            console.error("문제 파싱 오류:", error);
+            alert('다음 문제를 불러오는데 실패했습니다.');
+          }
         }
       }
     } else {
-      if (currentQuestionIndex < parsedData!.questions.length - 1) {
-        const nextIndex = currentQuestionIndex + 1;
-        
-        setUserAnswers(prev => {
-          const newAnswers = [...prev];
-          newAnswers[nextIndex] = null;
-          return newAnswers;
-        });
-        
-        setCurrentQuestionIndex(nextIndex);
-        setShowResult(false);
+      // 일반 모드 (즐겨찾기 아님)
+      const nextIndex = retryMode 
+        ? wrongQuestionIndices[wrongQuestionIndices.findIndex(i => i === currentQuestionIndex) + 1]
+        : currentQuestionIndex + 1;
+
+      if (retryMode) {
+        const currentWrongIndex = wrongQuestionIndices.findIndex(i => i === currentQuestionIndex);
+        if (currentWrongIndex < wrongQuestionIndices.length - 1) {
+          setCurrentQuestionIndex(nextIndex);
+          setShowResult(false);
+        } else {
+          setShowSummary(true);
+        }
+      } else {
+        if (currentQuestionIndex < parsedData!.questions.length - 1) {
+          setUserAnswers(prev => {
+            const newAnswers = [...prev];
+            newAnswers[nextIndex] = null;
+            return newAnswers;
+          });
+          
+          setCurrentQuestionIndex(nextIndex);
+          setShowResult(false);
+        } else {
+          setShowSummary(true);
+        }
       }
     }
-  }, [currentQuestionIndex, currentFavoriteIndex, parsedData, isFavoriteMode, favoritesList]);
+  }, [currentQuestionIndex, currentFavoriteIndex, parsedData, isFavoriteMode, favoritesList, retryMode, wrongQuestionIndices, currentQuestionItem]);
 
   const handlePrevQuestion = useCallback(() => {
     if (isFavoriteMode && favoritesList) {
@@ -381,37 +497,10 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     }
   }, [currentQuestionIndex, currentFavoriteIndex, isFavoriteMode, favoritesList]);
 
+  // 🔄 isCorrect는 화면 표시용으로만 사용
   const isCorrect = useMemo((): boolean => {
-    if (!parsedData || userAnswers[currentQuestionIndex] === null) return false;
-    
-    const userAnswer = userAnswers[currentQuestionIndex];
-    const type = parsedData.type as keyof typeof compareAnswers;
-    
-    console.log('isCorrect 계산:', { type, userAnswer, currentQuestion });
-    
-    switch (type) {
-      case 'multiple_choice':
-        return compareAnswers.multiple_choice(userAnswer, currentQuestion.correct_answer);
-      
-      case 'true_false':
-        return compareAnswers.true_false(userAnswer, currentQuestion.correct_answer);
-      
-      case 'sequence':
-        return compareAnswers.sequence(userAnswer, currentQuestion.correct_sequence);
-      
-      case 'fill_in_the_blank':
-        return compareAnswers.fill_in_the_blank(userAnswer, currentQuestion);
-      
-      case 'short_answer':
-        return compareAnswers.short_answer(userAnswer, currentQuestion);
-      
-      case 'descriptive':
-        return compareAnswers.descriptive(userAnswer, currentQuestion);
-      
-      default:
-        return false;
-    }
-  }, [parsedData, userAnswers, currentQuestionIndex, currentQuestion]);
+    return checkIfCorrect(currentQuestionIndex);
+  }, [checkIfCorrect, currentQuestionIndex]);
 
   const isCheckButtonDisabled = useMemo((): boolean => {
     const answer = userAnswers[currentQuestionIndex];
@@ -458,7 +547,6 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
       return <DescriptiveQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />;
     }
 
-    console.warn("지원되지 않는 문제 유형:", type);
     return <ShortAnswerQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />;
   }, [parsedData, currentQuestion, userAnswers, currentQuestionIndex, handleAnswer, showResult, currentQuestionItem]);
 
@@ -508,6 +596,172 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     }
   };
 
+  // 🆕 다시 시작하기
+  const handleRestart = useCallback(() => {
+    if (isFavoriteMode && favoritesList && favoritesList.length > 0) {
+      // 🔄 즐겨찾기 모드일 때: 첫 번째 즐겨찾기 항목으로 이동
+      const firstFavorite = favoritesList[0];
+      
+      try {
+        const rawData = JSON.parse(firstFavorite.rawJson || '{}');
+        const parsedQuestion: ParsedQuestion = {
+          type: rawData.type || 'multiple_choice',
+          questions: []
+        };
+
+        if (rawData.questions && Array.isArray(rawData.questions)) {
+          parsedQuestion.questions = rawData.questions;
+          if (rawData.questions.length > 0) {
+            parsedQuestion.type = rawData.questions[0].type || 
+              detectQuestionType(rawData.questions[0], firstFavorite.displayType);
+          }
+        } else {
+          parsedQuestion.type = rawData.type || 
+            detectQuestionType(rawData, firstFavorite.displayType);
+          parsedQuestion.questions = [rawData];
+        }
+
+        parsedQuestion.type = parsedQuestion.type.toLowerCase();
+        parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+
+        setCurrentQuestionItem(firstFavorite);
+        setParsedData(parsedQuestion);
+        setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
+        setCurrentQuestionIndex(firstFavorite.questionIndex || 0);
+        setCurrentFavoriteIndex(0);  // 🔄 첫 번째 인덱스로 설정
+        setShowResult(false);
+        setQuestionResults([]);
+        setShowSummary(false);
+        setRetryMode(false);
+        setWrongQuestionIndices([]);
+      } catch (error) {
+        console.error("문제 파싱 오류:", error);
+        alert('문제를 불러오는데 실패했습니다.');
+      }
+    } else {
+      // 일반 모드일 때
+      setCurrentQuestionIndex(0);
+      setUserAnswers(Array(parsedData!.questions.length).fill(null));
+      setShowResult(false);
+      setQuestionResults([]);
+      setShowSummary(false);
+      setRetryMode(false);
+      setWrongQuestionIndices([]);
+    }
+  }, [parsedData, isFavoriteMode, favoritesList]);
+
+  // 🆕 틀린 문제만 다시 풀기
+  const handleRetryWrong = useCallback(() => {
+    if (isFavoriteMode && favoritesList) {
+      // 🔄 즐겨찾기 모드: favoritesList의 인덱스 기반으로 처리
+      const wrongFavoriteIndices = questionResults
+        .filter(r => !r.isCorrect)
+        .map(r => {
+          // questionResults의 questionIndex는 각 문제 세트 내의 인덱스
+          // 실제 favoritesList에서의 인덱스를 찾아야 함
+          return favoritesList.findIndex(item => 
+            item.id === currentQuestionItem.id && 
+            (item.questionIndex === r.questionIndex || (!item.questionIndex && r.questionIndex === 0))
+          );
+        })
+        .filter(index => index !== -1)
+        .sort((a, b) => a - b);
+      
+      if (wrongFavoriteIndices.length === 0) {
+        alert('틀린 문제가 없습니다.');
+        return;
+      }
+
+      // 첫 번째 틀린 문제로 이동
+      const firstWrongFavorite = favoritesList[wrongFavoriteIndices[0]];
+      
+      try {
+        const rawData = JSON.parse(firstWrongFavorite.rawJson || '{}');
+        const parsedQuestion: ParsedQuestion = {
+          type: rawData.type || 'multiple_choice',
+          questions: []
+        };
+
+        if (rawData.questions && Array.isArray(rawData.questions)) {
+          parsedQuestion.questions = rawData.questions;
+          if (rawData.questions.length > 0) {
+            parsedQuestion.type = rawData.questions[0].type || 
+              detectQuestionType(rawData.questions[0], firstWrongFavorite.displayType);
+          }
+        } else {
+          parsedQuestion.type = rawData.type || 
+            detectQuestionType(rawData, firstWrongFavorite.displayType);
+          parsedQuestion.questions = [rawData];
+        }
+
+        parsedQuestion.type = parsedQuestion.type.toLowerCase();
+        parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+
+        setWrongQuestionIndices(wrongFavoriteIndices);
+        setRetryMode(true);
+        setCurrentQuestionItem(firstWrongFavorite);
+        setParsedData(parsedQuestion);
+        setUserAnswers(Array(parsedQuestion.questions.length).fill(null));
+        setCurrentQuestionIndex(firstWrongFavorite.questionIndex || 0);
+        setCurrentFavoriteIndex(wrongFavoriteIndices[0]);
+        setShowResult(false);
+        setShowSummary(false);
+      } catch (error) {
+        console.error("문제 파싱 오류:", error);
+        alert('문제를 불러오는데 실패했습니다.');
+      }
+    } else {
+      // 일반 모드
+      const wrongIndices = questionResults
+        .filter(r => !r.isCorrect)
+        .map(r => r.questionIndex)
+        .sort((a, b) => a - b);
+      
+      if (wrongIndices.length === 0) {
+        alert('틀린 문제가 없습니다.');
+        return;
+      }
+
+      setWrongQuestionIndices(wrongIndices);
+      setRetryMode(true);
+      setCurrentQuestionIndex(wrongIndices[0]);
+      setShowResult(false);
+      setShowSummary(false);
+      
+      // 틀린 문제의 답변만 초기화
+      setUserAnswers(prev => {
+        const newAnswers = [...prev];
+        wrongIndices.forEach(index => {
+          newAnswers[index] = null;
+        });
+        return newAnswers;
+      });
+    }
+  }, [questionResults, isFavoriteMode, favoritesList, currentQuestionItem]);
+
+  // 🆕 특정 문제로 이동
+  const handleViewQuestion = useCallback((index: number) => {
+    setCurrentQuestionIndex(index);
+    setShowResult(false);
+    setShowSummary(false);
+  }, []);
+
+  // 🆕 마지막 문제인지 확인
+  const isLastQuestion = useMemo(() => {
+    if (isFavoriteMode && favoritesList) {
+      if (retryMode && wrongQuestionIndices.length > 0) {
+        // 재도전 모드: 마지막 틀린 문제인지 확인
+        return wrongQuestionIndices.indexOf(currentFavoriteIndex) === wrongQuestionIndices.length - 1;
+      }
+      // 일반 모드: 마지막 즐겨찾기인지 확인
+      return currentFavoriteIndex === favoritesList.length - 1;
+    }
+    if (retryMode) {
+      return wrongQuestionIndices.findIndex(i => i === currentQuestionIndex) === wrongQuestionIndices.length - 1;
+    }
+    return currentQuestionIndex === (parsedData?.questions.length || 0) - 1;
+  }, [isFavoriteMode, favoritesList, currentFavoriteIndex, retryMode, wrongQuestionIndices, currentQuestionIndex, parsedData]);
+
   if (parsingError) {
     return (
       <Box sx={{ mt: 4 }}>
@@ -538,6 +792,31 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     );
   }
 
+  // 🆕 결과 요약 화면
+  if (showSummary) {
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={onClose}>
+            목록으로 돌아가기
+          </Button>
+          <Typography variant="h4" sx={{ ml: 2, flexGrow: 1 }}>
+            {retryMode ? '재도전 결과' : '학습 완료'}
+          </Typography>
+        </Box>
+
+        <QuestionResultSummary
+          results={questionResults}
+          totalQuestions={parsedData.questions.length}
+          onRestart={handleRestart}
+          onRetryWrong={handleRetryWrong}
+          onClose={onClose}
+          onViewQuestion={handleViewQuestion}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -545,7 +824,7 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
           목록으로 돌아가기
         </Button>
         <Typography variant="h4" sx={{ ml: 2, flexGrow: 1 }}>
-          문제 풀기
+          {retryMode ? '틀린 문제 재도전' : '문제 풀기'}
         </Typography>
         <Tooltip title={isFavorite ? "이 문제 즐겨찾기 제거" : "이 문제 즐겨찾기 추가"}>
           <IconButton
@@ -563,10 +842,13 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
           </IconButton>
         </Tooltip>
         <Typography variant="subtitle1" color="text.secondary">
-          {/* 🔄 즐겨찾기 모드일 때 다른 표시 */}
-          {isFavoriteMode 
-            ? `즐겨찾기 ${currentFavoriteIndex + 1} / ${favoritesList.length}`
-            : `${currentQuestionIndex + 1} / ${parsedData?.questions.length || 0}`
+          {retryMode && isFavoriteMode && wrongQuestionIndices.length > 0
+            ? `${wrongQuestionIndices.indexOf(currentFavoriteIndex) + 1} / ${wrongQuestionIndices.length} (틀린 문제)`
+            : retryMode 
+              ? `${wrongQuestionIndices.findIndex(i => i === currentQuestionIndex) + 1} / ${wrongQuestionIndices.length} (틀린 문제)`
+              : isFavoriteMode 
+                ? `즐겨찾기 ${currentFavoriteIndex + 1} / ${favoritesList.length}`
+                : `${currentQuestionIndex + 1} / ${parsedData?.questions.length || 0}`
           }
         </Typography>
       </Box>
@@ -603,15 +885,10 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
           ) : (
             <Button 
               variant="contained" 
-              color="primary" 
-              onClick={handleNextQuestion}
-              disabled={
-                isFavoriteMode 
-                  ? currentFavoriteIndex === (favoritesList?.length || 0) - 1
-                  : currentQuestionIndex === (parsedData?.questions.length || 0) - 1
-              }
+              color={isLastQuestion ? "success" : "primary"}
+              onClick={isLastQuestion ? () => setShowSummary(true) : handleNextQuestion}
             >
-              다음 문제
+              {isLastQuestion ? '결과 보기' : '다음 문제'}
             </Button>
           )}
         </Box>

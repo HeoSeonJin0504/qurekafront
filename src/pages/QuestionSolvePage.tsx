@@ -162,16 +162,27 @@ export default function QuestionSolvePage() {
         favoriteAPI.getFolders(user.id)
       ]);
 
-      setQuestionItems(qRes.data.questions.map(transformQuestionItem));
+      // 🔄 내 문제 모음 정렬: 생성 날짜 기준 최신순 (나중에 생성된 것이 위로)
+      const sortedQuestions = qRes.data.questions
+        .map(transformQuestionItem)
+        .sort((a, b) => {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return dateB.getTime() - dateA.getTime();
+        });
+
+      setQuestionItems(sortedQuestions);
       
-      // 🔄 즐겨찾기 목록을 최신순으로 정렬 (먼저 추가한 것이 앞에)
+      // 🔄 즐겨찾기 목록도 동일하게 정렬: 생성 날짜(favorited_at) 기준 최신순
       const sortedFavorites = fRes.data.questions
         .map(transformQuestionItem)
         .sort((a, b) => {
-          // favoriteId가 작을수록 먼저 추가된 것
-          const aId = a.favoriteId || 0;
-          const bId = b.favoriteId || 0;
-          return aId - bId;
+          // favoritedAt이 있으면 그것을 기준으로, 없으면 createdAt 사용
+          const dateStrA = a.favoritedAt || a.createdAt;
+          const dateStrB = b.favoritedAt || b.createdAt;
+          const dateA = new Date(dateStrA);
+          const dateB = new Date(dateStrB);
+          return dateB.getTime() - dateA.getTime();
         });
       
       setFavoriteItems(sortedFavorites);

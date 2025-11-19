@@ -42,12 +42,6 @@ export default function SequenceQuestion({
   // 항목 배열 가져오기 - 수정: items 배열이 없으면 빈 배열로 설정
   const items = question.items || [];
 
-  // 디버깅용 콘솔 출력
-  useEffect(() => {
-    console.log("문제 데이터:", question);
-    console.log("항목:", items);
-  }, [question, items]);
-
   // 현재 순서 상태
   const [sequence, setSequence] = useState<number[]>([]);
   // 사용자 선택 상태

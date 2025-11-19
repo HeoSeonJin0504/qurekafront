@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -23,14 +23,7 @@ export default function TrueFalseQuestion({
   const questionText = question.question_text || '';
   const correctAnswer = question.correct_answer;
 
-  // 컴포넌트 마운트 시 콘솔에 상태 출력 (디버깅용)
-  useEffect(() => {
-    console.log("TrueFalseQuestion 렌더링:", { question, userAnswer, showResult });
-    console.log("correctAnswer 타입:", typeof correctAnswer);
-  }, [question, userAnswer, showResult]);
-
   const handleButtonClick = (value: boolean) => {
-    console.log("버튼 클릭:", value);
     if (!showResult) {
       onAnswer(value);
     }
