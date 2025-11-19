@@ -451,7 +451,7 @@ export default function QuestionSolvePage() {
                             <Typography noWrap>{item.displayName}</Typography>
                           </Box>
                         </TableCell>
-                        <TableCell align="center">{item.createdAt}</TableCell>
+                        <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{item.createdAt}</TableCell>
                         <TableCell align="center">
                           <Chip 
                             label={item.displayType || '기타'} 
@@ -574,7 +574,7 @@ export default function QuestionSolvePage() {
                             </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell align="center" onClick={() => handleQuestionSelect(item, true)} sx={{ cursor: 'pointer' }}>
+                        <TableCell align="center" onClick={() => handleQuestionSelect(item, true)} sx={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           {item.favoritedAt || item.createdAt}
                         </TableCell>
                         <TableCell align="center" onClick={() => handleQuestionSelect(item, true)} sx={{ cursor: 'pointer' }}>
