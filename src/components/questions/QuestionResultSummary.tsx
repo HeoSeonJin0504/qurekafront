@@ -41,7 +41,8 @@ export default function QuestionResultSummary({
 }: QuestionResultSummaryProps) {
   const correctCount = results.filter(r => r.isCorrect).length;
   const wrongCount = results.length - correctCount;
-  const scorePercentage = Math.round((correctCount / totalQuestions) * 100);
+  // 🔄 실제 풀어본 문제 수를 기준으로 정답률 계산
+  const scorePercentage = results.length > 0 ? Math.round((correctCount / results.length) * 100) : 0;
 
   const getScoreColor = (percentage: number): string => {
     if (percentage >= 90) return 'success.main';
@@ -70,7 +71,7 @@ export default function QuestionResultSummary({
         {/* 점수 표시 */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="h2" fontWeight="bold" color={getScoreColor(scorePercentage)} gutterBottom>
-            {correctCount} / {totalQuestions}
+            {correctCount} / {results.length}
           </Typography>
           <Typography variant="h5" color="text.secondary" gutterBottom>
             정답률: {scorePercentage}%

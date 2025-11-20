@@ -308,14 +308,14 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     const isAnswerCorrect = checkIfCorrect(currentQuestionIndex);
     
     const result: QuestionResult = {
-      questionIndex: currentQuestionIndex,
+      questionIndex: isFavoriteMode ? currentFavoriteIndex : currentQuestionIndex,  // 🔄 즐겨찾기 모드에서는 currentFavoriteIndex 사용
       isCorrect: isAnswerCorrect,
       userAnswer: userAnswers[currentQuestionIndex]
     };
     
     setQuestionResults(prev => {
       const newResults = [...prev];
-      const existingIndex = newResults.findIndex(r => r.questionIndex === currentQuestionIndex);
+      const existingIndex = newResults.findIndex(r => r.questionIndex === (isFavoriteMode ? currentFavoriteIndex : currentQuestionIndex));
       if (existingIndex >= 0) {
         newResults[existingIndex] = result;
       } else {
@@ -323,7 +323,7 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
       }
       return newResults;
     });
-  }, [currentQuestionIndex, userAnswers, checkIfCorrect]);
+  }, [currentQuestionIndex, currentFavoriteIndex, userAnswers, checkIfCorrect, isFavoriteMode]);
 
   const handleNextQuestion = useCallback(() => {
     if (isFavoriteMode && favoritesList) {
@@ -807,7 +807,7 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
 
         <QuestionResultSummary
           results={questionResults}
-          totalQuestions={parsedData.questions.length}
+          totalQuestions={isFavoriteMode && favoritesList ? favoritesList.length : parsedData.questions.length}
           onRestart={handleRestart}
           onRetryWrong={handleRetryWrong}
           onClose={onClose}
