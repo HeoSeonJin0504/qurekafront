@@ -338,12 +338,56 @@ export default function QuestionSolvePage() {
   };
 
   // 문제 풀기 종료 처리
-  const handleCloseSolver = () => {
+  const handleCloseSolver = async () => {
     setSolveMode(false);
     setSelectedQuestion(null);
-    // 즐겨찾기에서 온 경우에만 새로고침 (즐겨찾기 상태가 변경될 수 있으므로)
-    if (selectedQuestion?.isFavoriteContext) {
-      loadAllData();
+    
+    // 🔄 QuestionSolver에서 즐겨찾기 변경이 있었을 수 있으므로 항상 새로고침
+    // 단, 로딩 상태는 표시하지 않고 백그라운드에서 조용히 업데이트
+    try {
+      if (user?.id) {
+        const [qRes, fRes, folderRes] = await Promise.all([
+          questionAPI.getUserQuestions(user.id),
+          favoriteAPI.getAllFavoriteQuestions(user.id),
+          favoriteAPI.getFolders(user.id)
+        ]);
+
+        // 🔄 내 문제 모음 정렬
+        const sortedQuestions = qRes.data.questions
+          .map(transformQuestionItem)
+          .sort((a, b) => {
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+        setQuestionItems(sortedQuestions);
+        
+        // 🔄 즐겨찾기 목록 정렬
+        const sortedFavorites = fRes.data.questions
+          .map(transformQuestionItem)
+          .sort((a, b) => {
+            const dateStrA = a.favoritedAt || a.createdAt;
+            const dateStrB = b.favoritedAt || b.createdAt;
+            const dateA = new Date(dateStrA);
+            const dateB = new Date(dateStrB);
+            return dateB.getTime() - dateA.getTime();
+          });
+        
+        setFavoriteItems(sortedFavorites);
+        
+        // 🔄 폴더 정렬
+        const sortedFolders = folderRes.data.folders.sort((a, b) => {
+          if (a.folder_name === '기본 폴더') return -1;
+          if (b.folder_name === '기본 폴더') return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+        
+        setFolders(sortedFolders);
+      }
+    } catch (error) {
+      console.error('데이터 업데이트 오류:', error);
+      // 에러가 발생해도 사용자에게는 표시하지 않음 (기존 데이터 유지)
     }
   };
 

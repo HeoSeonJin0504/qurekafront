@@ -210,6 +210,9 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
   const [retryMode, setRetryMode] = useState(false);
   const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>([]);
 
+  // 🆕 즐겨찾기 변경 추적
+  const [favoriteChanged, setFavoriteChanged] = useState(false);
+
   const isFavoriteMode = !!favoritesList && favoritesList.length > 0;
   const [currentFavoriteIndex, setCurrentFavoriteIndex] = useState(() => {
     if (!isFavoriteMode) return 0;
@@ -592,7 +595,7 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
 
   const { isFavorite, favoriteId } = getCurrentFavoriteStatus();
 
-  // 즐겨찾기 토글 핸들러 - 캐시 업데이트
+  // 즐겨찾기 토글 핸들러 - 캐시 업데이트 + 변경 플래그 설정
   const handleFavoriteToggle = async () => {
     if (!user?.id) {
       alert('로그인이 필요합니다.');
@@ -612,6 +615,8 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
           newMap.set(key, { isFavorite: false, favoriteId: null });
           return newMap;
         });
+        // 🆕 변경 플래그 설정
+        setFavoriteChanged(true);
       } else {
         const response = await favoriteAPI.addQuestion({
           userId: user.id,
@@ -625,6 +630,8 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
           newMap.set(key, { isFavorite: true, favoriteId: response.data.favoriteId });
           return newMap;
         });
+        // 🆕 변경 플래그 설정
+        setFavoriteChanged(true);
       }
     } catch (error: any) {
       console.error('즐겨찾기 처리 오류:', error);
@@ -803,7 +810,11 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
   if (parsingError) {
     return (
       <Box sx={{ mt: 4 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={onClose} sx={{ mb: 2 }}>
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={() => onClose()} // 🔄 변경사항 없으므로 false 전달 불필요
+          sx={{ mb: 2 }}
+        >
           돌아가기
         </Button>
         <Alert severity="error">{parsingError}</Alert>
@@ -835,7 +846,10 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     return (
       <Box sx={{ mt: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Button startIcon={<ArrowBackIcon />} onClick={onClose}>
+          <Button 
+            startIcon={<ArrowBackIcon />} 
+            onClick={onClose}
+          >
             목록으로 돌아가기
           </Button>
           <Typography variant="h4" sx={{ ml: 2, flexGrow: 1 }}>
@@ -858,7 +872,10 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
   return (
     <Box sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={onClose}>
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={onClose}
+        >
           목록으로 돌아가기
         </Button>
         <Typography variant="h4" sx={{ ml: 2, flexGrow: 1 }}>
