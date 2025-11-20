@@ -241,16 +241,34 @@ export default function UploadPage() {
     }
   };
 
-  // 재시도/재생성 핸들러
+  // 재생성 핸들러 수정 - 바로 재생성하도록 변경
   const handleRegenerate = (type: 'summary' | 'question') => {
-    if (type === 'summary') { state.setSummaryText(''); state.setActiveStep(1); }
+    if (type === 'summary') { 
+      state.setSummaryText(''); 
+      state.setSummaryError(false);
+      state.setActiveStep(2); // 생성 화면으로 이동
+      handlers.handleGenerateSummary(); // 바로 요약 생성
+    }
     else {
-      state.setQuestionText(''); state.setParsedQuestions([]); state.setIsJsonFormat(false);
-      state.setActiveStep(state.mode === 'summary' ? 3 : 1);
+      state.setQuestionText(''); 
+      state.setParsedQuestions([]); 
+      state.setIsJsonFormat(false);
+      state.setQuestionError(false);
+      
+      if (state.mode === 'summary') {
+        state.setActiveStep(4); // 생성 화면으로 이동
+        handlers.handleGenerateQuestion(); // 바로 문제 생성
+      } else if (state.mode === 'question' && state.questionSource === 'upload') {
+        state.setActiveStep(2); // 생성 화면으로 이동
+        handlers.handleGenerateQuestionFromFile(); // 파일에서 바로 문제 생성
+      } else if (state.mode === 'question' && state.questionSource === 'saved') {
+        state.setActiveStep(2); // 생성 화면으로 이동
+        handlers.handleGenerateQuestion(); // 요약본에서 바로 문제 생성
+      }
     }
   };
 
-  // 재시도 핸들러 수정 - 설정 단계로 돌아가도록
+  // 재시도 핸들러는 그대로 유지 (설정 단계로 돌아감)
   const handleRetrySummary = () => { 
     state.setSummaryError(false); 
     state.setSummaryText(''); 
