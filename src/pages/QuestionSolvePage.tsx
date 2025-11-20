@@ -187,28 +187,8 @@ export default function QuestionSolvePage() {
       
       setFavoriteItems(sortedFavorites);
       
-      // 기본 폴더가 없으면 생성 요청
-      let allFolders = folderRes.data.folders;
-      const hasDefaultFolder = allFolders.some(f => f.folder_name === '기본 폴더');
-      
-      if (!hasDefaultFolder) {
-        try {
-          await favoriteAPI.createFolder({
-            userId: user.id,
-            folderName: '기본 폴더',
-            description: '기본 즐겨찾기 폴더'
-          });
-          
-          // 폴더 다시 조회
-          const updatedFolderRes = await favoriteAPI.getFolders(user.id);
-          allFolders = updatedFolderRes.data.folders;
-        } catch (error) {
-          console.error('기본 폴더 생성 오류:', error);
-        }
-      }
-      
-      // 폴더 정렬: 기본 폴더를 맨 앞으로
-      const sortedFolders = allFolders.sort((a, b) => {
+      // 🔄 폴더 정렬만 수행 (기본 폴더 생성 로직 제거)
+      const sortedFolders = folderRes.data.folders.sort((a, b) => {
         if (a.folder_name === '기본 폴더') return -1;
         if (b.folder_name === '기본 폴더') return 1;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();

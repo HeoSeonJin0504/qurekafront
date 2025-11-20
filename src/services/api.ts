@@ -400,6 +400,10 @@ export const favoriteAPI = {
       `/favorites/folders/${userId}`
     ),
 
+  // 🆕 기본 폴더 생성 보장 (백엔드에서 중복 체크)
+  ensureDefaultFolder: (userId: number) =>
+    backendAPI.post('/favorites/folders/ensure-default', { userId }),
+
   // 즐겨찾기 폴더 생성
   createFolder: (data: { userId: number; folderName: string; description?: string }) =>
     backendAPI.post('/favorites/folders', data),

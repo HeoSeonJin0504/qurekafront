@@ -23,7 +23,8 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
     }
     
     const fileNameWithoutExt = f.name.substring(0, f.name.lastIndexOf('.'));
-    const validFileNamePattern = /^[가-힣a-zA-Z0-9.\-_()[\]% ]+$/;
+    // 한글 자음(ㄱ-ㅎ), 모음(ㅏ-ㅣ), 완성형 한글(가-힣) 모두 허용
+    const validFileNamePattern = /^[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9.\-_()[\]% ]+$/;
     
     if (!validFileNamePattern.test(fileNameWithoutExt)) {
       alert('파일명에는 한글, 영문, 숫자, 공백, 그리고 . - _ ( ) [ ] % 기호만 사용할 수 있습니다.');
