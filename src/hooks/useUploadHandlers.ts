@@ -9,7 +9,7 @@ import {
 } from '../services/api';
 import { aiQuestionPromptKeys_Korean } from '../constants/upload';
 
-export const useUploadHandlers = (state: any) => {
+export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
   const { user } = useAuth();
 
   // 파일 유효성 검사
@@ -65,39 +65,58 @@ export const useUploadHandlers = (state: any) => {
     }
   }, [state]);
 
+  const parseErrorResponse = (error: any): { type: 'short_text' | 'invalid_file' | 'generation_failed' | 'unknown', message: string } => {
+    const errorMessage = error.response?.data?.detail || error.message || '알 수 없는 오류가 발생했습니다.';
+    
+    if (errorMessage.includes('텍스트가 너무 짧습니다') || errorMessage.includes('최소 200자')) {
+      return { type: 'short_text', message: errorMessage };
+    }
+    if (errorMessage.includes('텍스트를 추출할 수 없습니다') || errorMessage.includes('파일에서')) {
+      return { type: 'invalid_file', message: errorMessage };
+    }
+    if (errorMessage.includes('프롬프트') || errorMessage.includes('생성')) {
+      return { type: 'generation_failed', message: errorMessage };
+    }
+    return { type: 'unknown', message: errorMessage };
+  };
+
   // 요약 생성
   const handleGenerateSummary = useCallback(async () => {
     if (!state.file || !user) return alert('파일 선택 및 로그인 필요');
     
     state.setLoadingSum(true);
     state.setSummaryError(false);
+    state.setSummaryErrorType('unknown');
+    state.setSummaryErrorMessage('');
+
+    const formData = new FormData();
+    formData.append('file', state.file);
+    formData.append('summary_type', state.aiSummaryType);
+    formData.append('field', state.sumField);
+    formData.append('level', state.sumLevel);
+    formData.append('sentence_count', String(state.sumSentCount));
     
-    try {
-      const fd = new FormData();
-      fd.append('file', state.file);
-      fd.append('summary_type', state.aiSummaryType);
-      fd.append('field', state.sumField);
-      fd.append('level', state.sumLevel);
-      fd.append('sentence_count', String(state.sumSentCount));
-      
-      if (state.sumTab === 2) fd.append('topic_count', String(state.sumTopicCount));
-      if (state.sumTab === 4) {
-        fd.append('keyword_count', String(state.sumKeywordCount));
-        if (state.sumKeywordCount > 0) {
-          const validKeywords = state.keywords.filter((k: string) => k && k.trim().length > 0);
-          if (validKeywords.length > 0) {
-            fd.append('user_keywords', validKeywords.join(','));
-          }
+    if (state.sumTab === 2) formData.append('topic_count', String(state.sumTopicCount));
+    if (state.sumTab === 4) {
+      formData.append('keyword_count', String(state.sumKeywordCount));
+      if (state.sumKeywordCount > 0) {
+        const validKeywords = state.keywords.filter((k: string) => k && k.trim().length > 0);
+        if (validKeywords.length > 0) {
+          formData.append('user_keywords', validKeywords.join(','));
         }
       }
+    }
 
-      const res = await aiSummaryAPI.generateSummary(fd);
+    try {
+      const res = await aiSummaryAPI.generateSummary(formData);
       state.setSummaryText(res.data.summary);
       state.setActiveStep(2);
-    } catch (e: any) {
-      console.error('요약 생성 오류:', e);
+    } catch (error: any) {
+      console.error('요약 생성 오류:', error);
+      const { type, message } = parseErrorResponse(error);
       state.setSummaryError(true);
-      state.setActiveStep(2);
+      state.setSummaryErrorType(type);
+      state.setSummaryErrorMessage(message);
     } finally {
       state.setLoadingSum(false);
     }
@@ -109,31 +128,35 @@ export const useUploadHandlers = (state: any) => {
     
     state.setLoadingQ(true);
     state.setQuestionError(false);
-    
-    try {
-      const fd = new FormData();
-      fd.append('file', state.file);
-      fd.append('generation_type', `문제 생성_${aiQuestionPromptKeys_Korean[state.qTab]}`);
-      fd.append('field', state.qField);
-      fd.append('level', state.qLevel);
-      fd.append('question_count', String(state.qCount));
-      
-      if (state.qTab === 0) {
-        fd.append('choice_count', String(state.optCount));
-        fd.append('choice_format', state.optionFormat);
-      }
-      if (state.qTab === 1) fd.append('array_choice_count', String(state.optCount));
-      if (state.qTab === 2) fd.append('blank_count', String(state.blankCount));
+    state.setQuestionErrorType('unknown');
+    state.setQuestionErrorMessage('');
 
-      const res = await aiQuestionAPI.generateQuestionsFromFile(fd);
+    const formData = new FormData();
+    formData.append('file', state.file);
+    formData.append('generation_type', `문제 생성_${aiQuestionPromptKeys_Korean[state.qTab]}`);
+    formData.append('field', state.qField);
+    formData.append('level', state.qLevel);
+    formData.append('question_count', String(state.qCount));
+    
+    if (state.qTab === 0) {
+      formData.append('choice_count', String(state.optCount));
+      formData.append('choice_format', state.optionFormat);
+    }
+    if (state.qTab === 1) formData.append('array_choice_count', String(state.optCount));
+    if (state.qTab === 2) formData.append('blank_count', String(state.blankCount));
+
+    try {
+      const res = await aiQuestionAPI.generateQuestionsFromFile(formData);
       state.setQuestionText(res.data.result);
       const isValid = parseQuestionJson(res.data.result);
       if (!isValid) state.setQuestionError(true);
       state.setActiveStep(2);
-    } catch (e: any) {
-      console.error('문제 생성 오류:', e);
+    } catch (error: any) {
+      console.error('문제 생성 오류:', error);
+      const { type, message } = parseErrorResponse(error);
       state.setQuestionError(true);
-      state.setActiveStep(2);
+      state.setQuestionErrorType(type);
+      state.setQuestionErrorMessage(message);
     } finally {
       state.setLoadingQ(false);
     }
@@ -145,7 +168,9 @@ export const useUploadHandlers = (state: any) => {
     
     state.setLoadingQ(true);
     state.setQuestionError(false);
-    
+    state.setQuestionErrorType('unknown');
+    state.setQuestionErrorMessage('');
+
     try {
       const payload: any = {
         generation_type: `문제 생성_${aiQuestionPromptKeys_Korean[state.qTab]}`,
@@ -167,14 +192,13 @@ export const useUploadHandlers = (state: any) => {
       const isValid = parseQuestionJson(res.data.result);
       if (!isValid) state.setQuestionError(true);
       
-      if (state.mode === 'summary') {
-        state.setActiveStep(4);
-      } else if (state.mode === 'question' && state.questionSource === 'saved') {
-        state.setActiveStep(2);
-      }
-    } catch (e: any) {
-      console.error('문제 생성 오류:', e);
+      state.setActiveStep(state.mode === 'summary' ? 4 : 2);
+    } catch (error: any) {
+      console.error('문제 생성 오류:', error);
+      const { type, message } = parseErrorResponse(error);
       state.setQuestionError(true);
+      state.setQuestionErrorType(type);
+      state.setQuestionErrorMessage(message);
       
       if (state.mode === 'summary') {
         state.setActiveStep(4);
