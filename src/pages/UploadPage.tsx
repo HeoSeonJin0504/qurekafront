@@ -268,11 +268,17 @@ export default function UploadPage() {
     }
   };
 
-  // 재시도 핸들러는 그대로 유지 (설정 단계로 돌아감)
+  // 재시도 핸들러 수정 - 에러 타입에 따라 다른 단계로 이동
   const handleRetrySummary = () => { 
     state.setSummaryError(false); 
     state.setSummaryText(''); 
-    state.setActiveStep(1); 
+    // short_text 에러인 경우 파일 업로드 단계로, 그 외에는 설정 단계로
+    state.setActiveStep(state.summaryErrorType === 'short_text' ? 0 : 1);
+    // short_text 에러인 경우 파일도 초기화
+    if (state.summaryErrorType === 'short_text') {
+      state.setFile(null);
+      state.setFileName(null);
+    }
   };
   
   const handleRetryQuestion = () => { 
@@ -280,7 +286,15 @@ export default function UploadPage() {
     state.setQuestionText(''); 
     state.setParsedQuestions([]); 
     state.setIsJsonFormat(false); 
-    state.setActiveStep(state.mode === 'summary' ? 3 : 1); 
+    
+    // short_text 에러인 경우 파일 업로드 단계로, 그 외에는 설정 단계로
+    if (state.questionErrorType === 'short_text') {
+      state.setActiveStep(0);
+      state.setFile(null);
+      state.setFileName(null);
+    } else {
+      state.setActiveStep(state.mode === 'summary' ? 3 : 1);
+    }
   };
 
   // 기타 핸들러
