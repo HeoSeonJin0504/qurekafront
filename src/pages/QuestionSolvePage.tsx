@@ -341,7 +341,10 @@ export default function QuestionSolvePage() {
   const handleCloseSolver = () => {
     setSolveMode(false);
     setSelectedQuestion(null);
-    loadAllData(); // 즐겨찾기 상태가 변경될 수 있으므로 새로고침
+    // 즐겨찾기에서 온 경우에만 새로고침 (즐겨찾기 상태가 변경될 수 있으므로)
+    if (selectedQuestion?.isFavoriteContext) {
+      loadAllData();
+    }
   };
 
   // 필터링된 즐겨찾기 목록

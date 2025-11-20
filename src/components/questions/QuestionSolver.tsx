@@ -198,8 +198,9 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
   const [userAnswers, setUserAnswers] = useState<any[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [parsingError, setParsingError] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoriteId, setFavoriteId] = useState<number | null>(null);
+  
+  // 🔄 즐겨찾기 상태를 Map으로 관리 (캐싱)
+  const [favoriteStatusMap, setFavoriteStatusMap] = useState<Map<string, { isFavorite: boolean; favoriteId: number | null }>>(new Map());
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [currentQuestionItem, setCurrentQuestionItem] = useState<QuestionItem>(questionItem);
   
@@ -550,21 +551,48 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     return <ShortAnswerQuestion key={`question-${currentQuestionIndex}`} {...commonProps} />;
   }, [parsedData, currentQuestion, userAnswers, currentQuestionIndex, handleAnswer, showResult, currentQuestionItem]);
 
-  // 즐겨찾기 상태 확인 - 🔄 currentQuestionItem 사용
+  // 🆕 즐겨찾기 상태 일괄 조회 (컴포넌트 마운트 시 한 번만)
   useEffect(() => {
-    if (user?.id && currentQuestionItem.id) {
-      favoriteAPI.checkQuestion(user.id, currentQuestionItem.id, currentQuestionIndex)
-        .then((response) => {
-          setIsFavorite(response.data.isFavorite);
-          setFavoriteId(response.data.favoriteId || null);
-        })
-        .catch((error) => {
-          console.error('즐겨찾기 확인 오류:', error);
-        });
-    }
-  }, [user, currentQuestionItem.id, currentQuestionIndex]);
+    const loadFavoriteStatuses = async () => {
+      if (!user?.id || !parsedData) return;
 
-  // 즐겨찾기 토글 핸들러 - 🔄 currentQuestionItem 사용
+      try {
+        // 현재 문제 세트의 모든 문제에 대해 즐겨찾기 상태 확인
+        const questions = parsedData.questions.map((_, index) => ({
+          questionId: currentQuestionItem.id,
+          questionIndex: index
+        }));
+
+        const response = await favoriteAPI.checkMultipleQuestions(user.id, questions);
+        
+        // Map으로 변환하여 저장
+        const statusMap = new Map();
+        response.data.statuses.forEach((status: any) => {
+          const key = `${status.questionId}-${status.questionIndex}`;
+          statusMap.set(key, {
+            isFavorite: status.isFavorite,
+            favoriteId: status.favoriteId || null
+          });
+        });
+        
+        setFavoriteStatusMap(statusMap);
+      } catch (error) {
+        console.error('즐겨찾기 상태 조회 오류:', error);
+      }
+    };
+
+    loadFavoriteStatuses();
+  }, [user?.id, parsedData, currentQuestionItem.id]);
+
+  // 🔄 현재 문제의 즐겨찾기 상태 가져오기 (캐시에서)
+  const getCurrentFavoriteStatus = () => {
+    const key = `${currentQuestionItem.id}-${currentQuestionIndex}`;
+    return favoriteStatusMap.get(key) || { isFavorite: false, favoriteId: null };
+  };
+
+  const { isFavorite, favoriteId } = getCurrentFavoriteStatus();
+
+  // 즐겨찾기 토글 핸들러 - 캐시 업데이트
   const handleFavoriteToggle = async () => {
     if (!user?.id) {
       alert('로그인이 필요합니다.');
@@ -574,10 +602,16 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
     setFavoriteLoading(true);
 
     try {
+      const key = `${currentQuestionItem.id}-${currentQuestionIndex}`;
+      
       if (isFavorite && favoriteId) {
         await favoriteAPI.removeQuestion(favoriteId, user.id);
-        setIsFavorite(false);
-        setFavoriteId(null);
+        // 캐시 업데이트
+        setFavoriteStatusMap(prev => {
+          const newMap = new Map(prev);
+          newMap.set(key, { isFavorite: false, favoriteId: null });
+          return newMap;
+        });
       } else {
         const response = await favoriteAPI.addQuestion({
           userId: user.id,
@@ -585,8 +619,12 @@ export default function QuestionSolver({ questionItem, favoritesList, onClose }:
           questionId: currentQuestionItem.id,
           questionIndex: currentQuestionIndex
         });
-        setIsFavorite(true);
-        setFavoriteId(response.data.favoriteId);
+        // 캐시 업데이트
+        setFavoriteStatusMap(prev => {
+          const newMap = new Map(prev);
+          newMap.set(key, { isFavorite: true, favoriteId: response.data.favoriteId });
+          return newMap;
+        });
       }
     } catch (error: any) {
       console.error('즐겨찾기 처리 오류:', error);

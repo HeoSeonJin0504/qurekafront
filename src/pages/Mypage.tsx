@@ -279,6 +279,7 @@ export default function Mypage() {
   };
 
   // 이름 변경 확인 처리
+  // 🔄 이름 변경 확인 처리 - 로컬 상태만 업데이트
   const handleRenameConfirm = async (newName: string) => {
     if (!itemToRename) return;
 
@@ -316,6 +317,8 @@ export default function Mypage() {
         setActiveViewItem({ ...activeViewItem, displayName: newName });
         setDialogTitle(newName);
       }
+      
+      // 🗑️ loadAllData() 호출 제거 - 로컬 상태 업데이트로 충분
     } catch (error: any) {
       setSnackbar({
         open: true,

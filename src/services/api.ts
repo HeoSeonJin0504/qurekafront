@@ -429,6 +429,10 @@ export const favoriteAPI = {
       params: { userId }  // Query parameter로 전달
     }),
 
+  // 🆕 여러 문제의 즐겨찾기 상태 일괄 조회
+  checkMultipleQuestions: (userId: number, questions: Array<{ questionId: number; questionIndex?: number }>) =>
+    backendAPI.post(`/favorites/check-multiple/${userId}`, { questions }),
+
   // 특정 폴더의 즐겨찾기 문제 목록
   getFolderQuestions: (userId: number, folderId: number) =>
     backendAPI.get(`/favorites/folders/${folderId}/questions/${userId}`),
