@@ -26,6 +26,7 @@ import {
   AccountCircle,
   CheckCircleOutline,
   Close,
+  Check,
 } from "@mui/icons-material";
 import Header from "../components/Header";
 import PageNavigator from "../components/common/PageNavigator";
@@ -176,6 +177,7 @@ export default function UploadPage() {
     }
     state.setFile(f);
     state.setFileName(f.name);
+    handlers.markStepCompleted(0); // 파일 업로드 완료 표시
     state.setActiveStep(1);
   };
 
@@ -205,7 +207,16 @@ export default function UploadPage() {
     if (!handlers.validateFile(droppedFile)) return;
     state.setFile(droppedFile);
     state.setFileName(droppedFile.name);
+    handlers.markStepCompleted(0); // 파일 업로드 완료 표시
     state.setActiveStep(1);
+  };
+
+  // 단계 클릭 핸들러 추가
+  const handleStepClick = (step: number) => {
+    // 완료된 단계만 클릭 가능
+    if (state.completedSteps.has(step)) {
+      state.setActiveStep(step);
+    }
   };
 
   // 네비게이션 핸들러
@@ -298,9 +309,36 @@ export default function UploadPage() {
   };
 
   // 기타 핸들러
-  const handleModeSelect = (selectedMode: 'summary' | 'question' | null) => { state.setMode(selectedMode); if (selectedMode === 'summary') state.setActiveStep(0); };
-  const handleQuestionSourceSelect = (source: 'upload' | 'saved' | null) => { state.setQuestionSource(source); if (source === 'upload') state.setActiveStep(0); else if (source === 'saved') { state.setIsSummarySelected(false); state.setActiveStep(0); } };
-  const handleSelectSavedSummary = (summary: SummaryItem) => { state.setSummaryText(summary.summary_text); state.setFileName(summary.file_name); state.setDbSummaryTypeKorean(summary.summary_type as DbSummaryPromptKey_Korean); state.setIsSummarySelected(true); state.setActiveStep(0); state.setOpenSavedSummariesDialog(false); };
+  const handleModeSelect = (selectedMode: 'summary' | 'question' | null) => { 
+    state.setMode(selectedMode); 
+    if (selectedMode === 'summary') {
+      state.setActiveStep(0);
+      state.setCompletedSteps(new Set());
+    }
+  };
+  
+  const handleQuestionSourceSelect = (source: 'upload' | 'saved' | null) => { 
+    state.setQuestionSource(source); 
+    if (source === 'upload') {
+      state.setActiveStep(0);
+      state.setCompletedSteps(new Set());
+    } else if (source === 'saved') { 
+      state.setIsSummarySelected(false); 
+      state.setActiveStep(0);
+      state.setCompletedSteps(new Set());
+    } 
+  };
+  
+  const handleSelectSavedSummary = (summary: SummaryItem) => { 
+    state.setSummaryText(summary.summary_text); 
+    state.setFileName(summary.file_name); 
+    state.setDbSummaryTypeKorean(summary.summary_type as DbSummaryPromptKey_Korean); 
+    state.setIsSummarySelected(true);
+    handlers.markStepCompleted(0); // 요약본 선택 완료 표시
+    state.setActiveStep(0); 
+    state.setOpenSavedSummariesDialog(false); 
+  };
+  
   const handleSave = (type: 'summary' | 'question') => { state.setSaveDialogType(type); state.setOpenSaveNameDialog(true); };
 
   // 단계 생성
@@ -354,11 +392,72 @@ export default function UploadPage() {
             <>
               <Paper elevation={8} sx={{ p: 4, borderRadius: 4, mb: 4, background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(10px)", border: "1px solid rgba(59, 130, 246, 0.1)" }}>
                 <Stepper activeStep={state.activeStep} alternativeLabel>
-                  {steps.map((label) => (
-                    <Step key={label}>
-                      <StepLabel sx={{ "& .MuiStepLabel-label": { fontSize: "1.1rem", fontWeight: 600 }, "& .MuiStepIcon-root": { color: "#93c5fd" }, "& .MuiStepIcon-root.Mui-active": { color: "#3b82f6" }, "& .MuiStepIcon-root.Mui-completed": { color: "#2563eb" } }}>{label}</StepLabel>
-                    </Step>
-                  ))}
+                  {steps.map((label, index) => {
+                    const isCompleted = state.completedSteps.has(index);
+                    const isClickable = isCompleted;
+                    
+                    return (
+                      <Step 
+                        key={label}
+                        completed={isCompleted}
+                        sx={{
+                          cursor: isClickable ? 'pointer' : 'default',
+                          '&:hover': isClickable ? {
+                            '& .MuiStepLabel-label': {
+                              color: '#2563eb',
+                            }
+                          } : {}
+                        }}
+                        onClick={() => handleStepClick(index)}
+                      >
+                        <StepLabel 
+                          StepIconComponent={isCompleted ? () => (
+                            <Box
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: '#10b981',
+                                color: 'white',
+                                transition: 'all 0.3s ease',
+                                ...(isClickable && {
+                                  '&:hover': {
+                                    transform: 'scale(1.1)',
+                                    bgcolor: '#059669',
+                                  }
+                                })
+                              }}
+                            >
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                          ) : undefined}
+                          sx={{ 
+                            "& .MuiStepLabel-label": { 
+                              fontSize: "1.1rem", 
+                              fontWeight: 600,
+                              transition: 'color 0.3s ease',
+                            }, 
+                            "& .MuiStepIcon-root": { 
+                              color: "#93c5fd",
+                              transition: 'all 0.3s ease',
+                            }, 
+                            "& .MuiStepIcon-root.Mui-active": { 
+                              color: "#3b82f6",
+                              transform: 'scale(1.1)',
+                            }, 
+                            "& .MuiStepIcon-root.Mui-completed": { 
+                              color: "#10b981" 
+                            } 
+                          }}
+                        >
+                          {label}
+                        </StepLabel>
+                      </Step>
+                    );
+                  })}
                 </Stepper>
               </Paper>
               <Box sx={{ minHeight: 500, mb: 4 }}>{renderStep(state.activeStep)}</Box>

@@ -12,6 +12,11 @@ import { aiQuestionPromptKeys_Korean } from '../constants/upload';
 export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
   const { user } = useAuth();
 
+  // 단계 완료 표시 헬퍼 함수
+  const markStepCompleted = useCallback((step: number) => {
+    state.setCompletedSteps(prev => new Set(prev).add(step));
+  }, [state]);
+
   // 파일 유효성 검사
   const validateFile = useCallback((f: File): boolean => {
     const allowedExtensions = ['pdf', 'ppt', 'pptx'];
@@ -111,6 +116,9 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
     try {
       const res = await aiSummaryAPI.generateSummary(formData);
       state.setSummaryText(res.data.summary);
+      markStepCompleted(0); // 파일 업로드 완료
+      markStepCompleted(1); // 요약 설정 완료
+      markStepCompleted(2); // 요약 생성 완료
       state.setActiveStep(2);
     } catch (error: any) {
       console.error('요약 생성 오류:', error);
@@ -121,7 +129,7 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
     } finally {
       state.setLoadingSum(false);
     }
-  }, [state, user]);
+  }, [state, user, markStepCompleted]);
 
   // 파일에서 문제 생성
   const handleGenerateQuestionFromFile = useCallback(async () => {
@@ -151,6 +159,9 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
       state.setQuestionText(res.data.result);
       const isValid = parseQuestionJson(res.data.result);
       if (!isValid) state.setQuestionError(true);
+      markStepCompleted(0); // 파일 업로드 완료
+      markStepCompleted(1); // 문제 설정 완료
+      markStepCompleted(2); // 문제 생성 완료
       state.setActiveStep(2);
     } catch (error: any) {
       console.error('문제 생성 오류:', error);
@@ -161,7 +172,7 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
     } finally {
       state.setLoadingQ(false);
     }
-  }, [state, user, parseQuestionJson]);
+  }, [state, user, parseQuestionJson, markStepCompleted]);
 
   // 요약본에서 문제 생성
   const handleGenerateQuestion = useCallback(async () => {
@@ -193,7 +204,16 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
       const isValid = parseQuestionJson(res.data.result);
       if (!isValid) state.setQuestionError(true);
       
-      state.setActiveStep(state.mode === 'summary' ? 4 : 2);
+      if (state.mode === 'summary') {
+        markStepCompleted(3); // 문제 설정 완료
+        markStepCompleted(4); // 문제 생성 완료
+        state.setActiveStep(4);
+      } else if (state.mode === 'question' && state.questionSource === 'saved') {
+        markStepCompleted(0); // 요약본 선택 완료
+        markStepCompleted(1); // 문제 설정 완료
+        markStepCompleted(2); // 문제 생성 완료
+        state.setActiveStep(2);
+      }
     } catch (error: any) {
       console.error('문제 생성 오류:', error);
       const { type, message } = parseErrorResponse(error);
@@ -209,7 +229,7 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
     } finally {
       state.setLoadingQ(false);
     }
-  }, [state, user, parseQuestionJson]);
+  }, [state, user, parseQuestionJson, markStepCompleted]);
 
   // 저장
   const handleConfirmSave = useCallback(async (customName: string) => {
@@ -248,5 +268,6 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
     handleGenerateQuestionFromFile,
     handleGenerateQuestion,
     handleConfirmSave,
+    markStepCompleted,
   };
 };

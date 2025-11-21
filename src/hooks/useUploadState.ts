@@ -17,6 +17,7 @@ export const useUploadState = () => {
   const [mode, setMode] = useState<Mode>(null);
   const [questionSource, setQuestionSource] = useState<QuestionSource>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -67,6 +68,7 @@ export const useUploadState = () => {
     setMode(null);
     setQuestionSource(null);
     setActiveStep(0);
+    setCompletedSteps(new Set());
     setFile(null);
     setFileName(null);
     setSummaryText('');
@@ -81,6 +83,7 @@ export const useUploadState = () => {
     mode, setMode,
     questionSource, setQuestionSource,
     activeStep, setActiveStep,
+    completedSteps, setCompletedSteps,
     file, setFile,
     fileName, setFileName,
     isDragging, setIsDragging,
