@@ -5,14 +5,9 @@ import {
   Typography,
   Button,
   LinearProgress,
-  Grid,
-  Card,
-  CardContent,
   Divider,
   Chip
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
@@ -97,40 +92,6 @@ export default function QuestionResultSummary({
             }}
           />
         </Box>
-
-        {/* 통계 카드 */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={6}>
-            <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CheckCircleIcon sx={{ fontSize: 40, mr: 1 }} />
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {correctCount}
-                    </Typography>
-                    <Typography variant="body2">맞힌 문제</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6}>
-            <Card sx={{ bgcolor: 'error.light', color: 'white' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CancelIcon sx={{ fontSize: 40, mr: 1 }} />
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {wrongCount}
-                    </Typography>
-                    <Typography variant="body2">틀린 문제</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
 
         {/* 틀린 문제 목록 */}
         {wrongCount > 0 && (
