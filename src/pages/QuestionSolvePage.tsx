@@ -25,7 +25,8 @@ import {
   MenuItem,
   Tabs,
   Tab,
-  Tooltip
+  Tooltip,
+  Snackbar
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import StarIcon from '@mui/icons-material/Star';
@@ -35,6 +36,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import { CheckCircleOutline, Close } from '@mui/icons-material';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { questionAPI, favoriteAPI, FavoriteFolder } from '../services/api';
@@ -68,6 +70,25 @@ export default function QuestionSolvePage() {
   // 폴더 메뉴
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedFolderForMenu, setSelectedFolderForMenu] = useState<FavoriteFolder | null>(null);
+
+  // 스낵바 상태
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  // 삭제 확인 다이얼로그 상태
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<QuestionItem | null>(null);
+
+  // 🆕 폴더 삭제 확인 다이얼로그 상태 추가
+  const [deleteFolderConfirmOpen, setDeleteFolderConfirmOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<FavoriteFolder | null>(null);
 
   // 문제 변환 함수 (useEffect 외부로 이동)
   const transformQuestionItem = (q: any): QuestionItem => {
@@ -218,7 +239,11 @@ export default function QuestionSolvePage() {
   // 폴더 생성
   const handleCreateFolder = async () => {
     if (!user?.id || !newFolderName.trim()) {
-      alert('폴더 이름을 입력해주세요.');
+      setSnackbar({
+        open: true,
+        message: '폴더 이름을 입력해주세요.',
+        severity: 'error'
+      });
       return;
     }
 
@@ -233,48 +258,74 @@ export default function QuestionSolvePage() {
       setNewFolderName('');
       setNewFolderDescription('');
       await loadAllData();
-      alert('폴더가 생성되었습니다.');
+      setSnackbar({
+        open: true,
+        message: '폴더가 생성되었습니다.',
+        severity: 'success'
+      });
     } catch (error: any) {
       console.error('폴더 생성 오류:', error);
-      alert(error.response?.data?.message || '폴더 생성 중 오류가 발생했습니다.');
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || '폴더 생성 중 오류가 발생했습니다.',
+        severity: 'error'
+      });
     }
   };
 
-  // 폴더 삭제
-  const handleDeleteFolder = async (folder: FavoriteFolder) => {
+  // 🔄 폴더 삭제 - 확인 다이얼로그 표시
+  const handleDeleteFolder = (folder: FavoriteFolder) => {
     if (folder.folder_name === '기본 폴더') {
-      alert('기본 폴더는 삭제할 수 없습니다.');
+      setSnackbar({
+        open: true,
+        message: '기본 폴더는 삭제할 수 없습니다.',
+        severity: 'error'
+      });
       return;
     }
 
-    if (!window.confirm(`"${folder.folder_name}" 폴더를 삭제하시겠습니까?\n폴더 내의 모든 즐겨찾기도 삭제됩니다.`)) {
-      return;
-    }
+    setFolderToDelete(folder);
+    setDeleteFolderConfirmOpen(true);
+  };
 
-    if (!user?.id) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
+  // 🆕 실제 폴더 삭제 수행
+  const handleDeleteFolderConfirmed = async () => {
+    if (!folderToDelete || !user?.id) return;
 
     try {
-      await favoriteAPI.deleteFolder(folder.folder_id, user.id);  // 🔄 userId 전달
+      await favoriteAPI.deleteFolder(folderToDelete.folder_id, user.id);
       setFolderMenuAnchor(null);
       setSelectedFolderForMenu(null);
-      if (selectedFolder === folder.folder_id) {
+      if (selectedFolder === folderToDelete.folder_id) {
         setSelectedFolder(null);
       }
       await loadAllData();
-      alert('폴더가 삭제되었습니다.');
+      setSnackbar({
+        open: true,
+        message: '폴더가 삭제되었습니다.',
+        severity: 'success'
+      });
     } catch (error: any) {
       console.error('폴더 삭제 오류:', error);
-      alert(error.response?.data?.message || '폴더 삭제 중 오류가 발생했습니다.');
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || '폴더 삭제 중 오류가 발생했습니다.',
+        severity: 'error'
+      });
+    } finally {
+      setDeleteFolderConfirmOpen(false);
+      setFolderToDelete(null);
     }
   };
 
   // 문제 이동
   const handleMoveQuestion = async () => {
     if (!user?.id || !selectedQuestionForMove || !targetFolderId) {
-      alert('이동할 폴더를 선택해주세요.');
+      setSnackbar({
+        open: true,
+        message: '이동할 폴더를 선택해주세요.',
+        severity: 'error'
+      });
       return;
     }
 
@@ -296,35 +347,58 @@ export default function QuestionSolvePage() {
       setSelectedQuestionForMove(null);
       setTargetFolderId(null);
       await loadAllData();
-      alert('문제가 이동되었습니다.');
+      setSnackbar({
+        open: true,
+        message: '문제가 이동되었습니다.',
+        severity: 'success'
+      });
     } catch (error: any) {
       console.error('문제 이동 오류:', error);
-      alert(error.response?.data?.message || '문제 이동 중 오류가 발생했습니다.');
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || '문제 이동 중 오류가 발생했습니다.',
+        severity: 'error'
+      });
     }
   };
 
-  // 🆕 즐겨찾기 삭제 핸들러 추가
-  const handleDeleteFavorite = async (item: QuestionItem) => {
+  // 🔄 즐겨찾기 삭제 핸들러 수정 - 확인 다이얼로그 사용
+  const handleDeleteFavorite = (item: QuestionItem) => {
     if (!user?.id || !item.favoriteId) {
-      alert('즐겨찾기 정보를 찾을 수 없습니다.');
+      setSnackbar({
+        open: true,
+        message: '즐겨찾기 정보를 찾을 수 없습니다.',
+        severity: 'error'
+      });
       return;
     }
 
-    const questionName = item.questionIndex !== undefined 
-      ? `${item.displayName} - 문제 ${item.questionIndex + 1}`
-      : item.displayName;
+    setItemToDelete(item);
+    setDeleteConfirmOpen(true);
+  };
 
-    if (!window.confirm(`"${questionName}"을(를) 즐겨찾기에서 삭제하시겠습니까?`)) {
-      return;
-    }
+  // 🆕 실제 삭제 수행 함수
+  const handleDeleteConfirmed = async () => {
+    if (!itemToDelete || !user?.id) return;
 
     try {
-      await favoriteAPI.removeQuestion(item.favoriteId, user.id);
+      await favoriteAPI.removeQuestion(itemToDelete.favoriteId!, user.id);
       await loadAllData();
-      alert('즐겨찾기에서 삭제되었습니다.');
+      setSnackbar({
+        open: true,
+        message: '즐겨찾기에서 삭제되었습니다.',
+        severity: 'success'
+      });
     } catch (error: any) {
       console.error('즐겨찾기 삭제 오류:', error);
-      alert(error.response?.data?.message || '즐겨찾기 삭제 중 오류가 발생했습니다.');
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || '즐겨찾기 삭제 중 오류가 발생했습니다.',
+        severity: 'error'
+      });
+    } finally {
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -677,6 +751,132 @@ export default function QuestionSolvePage() {
           )
         )}
       </Box>
+
+      {/* 스낵바 - Mypage.tsx 스타일 적용 */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={10000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ mt: 8 }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            minWidth: 400,
+            bgcolor: snackbar.severity === 'success' ? '#E8F9EE' : '#FFEBEE',
+            color: snackbar.severity === 'success' ? '#1a5d3a' : '#c62828',
+            borderRadius: 2,
+            boxShadow: 3,
+            px: 2.5,
+            py: 1.5,
+          }}
+        >
+          {snackbar.severity === 'success' && (
+            <CheckCircleOutline sx={{ fontSize: 24, color: '#1a5d3a' }} />
+          )}
+          <Typography sx={{ fontSize: '1rem', fontWeight: 500, flexGrow: 1 }}>
+            {snackbar.message}
+          </Typography>
+          <IconButton
+            size="small"
+            onClick={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+            sx={{
+              color: snackbar.severity === 'success' ? '#1a5d3a' : '#c62828',
+              '&:hover': {
+                bgcolor: snackbar.severity === 'success' 
+                  ? 'rgba(26, 93, 58, 0.1)' 
+                  : 'rgba(198, 40, 40, 0.1)',
+              }
+            }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        </Box>
+      </Snackbar>
+
+      {/* 즐겨찾기 삭제 확인 다이얼로그 */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+        disableRestoreFocus
+      >
+        <DialogTitle id="delete-dialog-title">즐겨찾기 삭제</DialogTitle>
+        <DialogContent>
+          <Typography>
+            정말 이 문제를 즐겨찾기에서 삭제하시겠습니까?
+          </Typography>
+          {itemToDelete && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              "{itemToDelete.displayName}
+              {itemToDelete.questionIndex !== undefined && ` - 문제 ${itemToDelete.questionIndex + 1}`}"
+            </Typography>
+          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            삭제한 항목은 복구할 수 없습니다.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
+          <Button
+            onClick={handleDeleteConfirmed}
+            variant="outlined"
+            color="error"
+          >
+            삭제
+          </Button>
+          <Button 
+            onClick={() => setDeleteConfirmOpen(false)}
+            variant="outlined"
+          >
+            취소
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 폴더 삭제 확인 다이얼로그 */}
+      <Dialog
+        open={deleteFolderConfirmOpen}
+        onClose={() => setDeleteFolderConfirmOpen(false)}
+        aria-labelledby="delete-folder-dialog-title"
+        disableRestoreFocus
+      >
+        <DialogTitle id="delete-folder-dialog-title">폴더 삭제</DialogTitle>
+        <DialogContent>
+          <Typography>
+            정말 이 폴더를 삭제하시겠습니까?
+          </Typography>
+          {folderToDelete && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              "{folderToDelete.folder_name}"
+            </Typography>
+          )}
+          <Typography variant="body2" color="error" sx={{ mt: 1, fontWeight: 600 }}>
+            폴더 내의 모든 즐겨찾기도 함께 삭제됩니다.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            삭제한 항목은 복구할 수 없습니다.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
+          <Button
+            onClick={handleDeleteFolderConfirmed}
+            variant="outlined"
+            color="error"
+          >
+            삭제
+          </Button>
+          <Button 
+            onClick={() => setDeleteFolderConfirmOpen(false)}
+            variant="outlined"
+          >
+            취소
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 폴더 생성 다이얼로그 */}
       <Dialog open={folderDialogOpen} onClose={() => setFolderDialogOpen(false)} maxWidth="sm" fullWidth>

@@ -15,7 +15,7 @@ import {
   IconButton,
   Stack,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import { Close, CheckCircleOutline } from "@mui/icons-material";
 import Header from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
 import { summaryAPI, questionAPI } from "../services/api";
@@ -400,49 +400,49 @@ export default function Mypage() {
           마이페이지
         </Typography>
 
+        {/* 스낵바 - UploadPage.tsx 스타일 적용 */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={10000}
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          sx={{ mt: 8 }}
         >
-          <Alert
-            severity={snackbar.severity}
+          <Box
             sx={{
-              minWidth: 380,
-              maxWidth: 450,
-              borderRadius: 2.5,
-              boxShadow: snackbar.severity === 'success' 
-                ? '0 4px 20px rgba(46, 125, 50, 0.15)'
-                : '0 4px 20px rgba(211, 47, 47, 0.15)',
-              display: "flex",
-              alignItems: "center",
-              py: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 400,
+              bgcolor: snackbar.severity === 'success' ? '#E8F9EE' : '#FFEBEE',
+              color: snackbar.severity === 'success' ? '#1a5d3a' : '#c62828',
+              borderRadius: 2,
+              boxShadow: 3,
               px: 2.5,
+              py: 1.5,
             }}
-            action={
-              <IconButton
-                size="small"
-                aria-label="close"
-                sx={{
-                  color: 'text.secondary',
-                  p: 0.5,
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                }}
-                onClick={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-              >
-                <Close fontSize="small" />
-              </IconButton>
-            }
           >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography variant="body2" fontWeight={600}>
-                {snackbar.message}
-              </Typography>
-            </Box>
-          </Alert>
+            {snackbar.severity === 'success' && (
+              <CheckCircleOutline sx={{ fontSize: 24, color: '#1a5d3a' }} />
+            )}
+            <Typography sx={{ fontSize: '1rem', fontWeight: 500, flexGrow: 1 }}>
+              {snackbar.message}
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+              sx={{
+                color: snackbar.severity === 'success' ? '#1a5d3a' : '#c62828',
+                '&:hover': {
+                  bgcolor: snackbar.severity === 'success' 
+                    ? 'rgba(26, 93, 58, 0.1)' 
+                    : 'rgba(198, 40, 40, 0.1)',
+                }
+              }}
+            >
+              <Close fontSize="small" />
+            </IconButton>
+          </Box>
         </Snackbar>
 
         <FileListSection

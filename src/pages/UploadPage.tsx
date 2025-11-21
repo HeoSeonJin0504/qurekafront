@@ -385,7 +385,7 @@ export default function UploadPage() {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 2,
+              gap: 1,
               minWidth: 400,
               bgcolor: '#E8F9EE',
               color: '#1a5d3a',
@@ -448,7 +448,7 @@ export default function UploadPage() {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 2,
+              gap: 1,
               minWidth: 400,
               bgcolor: '#E8F9EE',
               color: '#1a5d3a',
