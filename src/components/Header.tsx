@@ -18,7 +18,7 @@ import {
   useTheme,
   Divider
 } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -28,6 +28,7 @@ import { Chip } from '@mui/material'
 
 export default function Header() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isLoggedIn, logout, user} = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -54,7 +55,12 @@ export default function Header() {
   }
 
   const handleNavigation = (path: string) => {
-    navigate(path)
+    // 현재 경로와 같은 경로를 클릭한 경우 새로고침
+    if (location.pathname === path) {
+      window.location.reload()
+    } else {
+      navigate(path)
+    }
     setMobileMenuOpen(false)
   }
 
@@ -70,7 +76,7 @@ export default function Header() {
           {/* 로고 */}
           <Box
             sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-            onClick={() => navigate('/')}
+            onClick={() => handleNavigation('/')}
           >
             <img
               src={LogoImage}
@@ -84,21 +90,21 @@ export default function Header() {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Button
                 variant="text"
-                onClick={() => navigate('/')}
+                onClick={() => handleNavigation('/')}
                 sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
               >
                 홈
               </Button>
               <Button
                 variant="text"
-                onClick={() => navigate('/upload')}
+                onClick={() => handleNavigation('/upload')}
                 sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
               >
                 실습하기
               </Button>
               <Button
                 variant="text"
-                onClick={() => navigate('/solve-questions')}
+                onClick={() => handleNavigation('/solve-questions')}
                 sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
               >
                 문제 풀기
