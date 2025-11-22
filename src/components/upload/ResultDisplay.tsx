@@ -22,6 +22,7 @@ interface ResultDisplayProps {
   onSave: () => void;
   onDownload: () => void;
   onRegenerate: () => void;
+  disabled?: boolean; // 추가
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({
@@ -35,6 +36,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
   onSave,
   onDownload,
   onRegenerate,
+  disabled = false, // 추가
 }) => {
   return (
     <Fade in timeout={500}>
@@ -78,6 +80,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
               variant="outlined"
               size="large"
               onClick={onSave}
+              disabled={disabled}
               sx={{
                 borderRadius: 3,
                 px: 4,
@@ -97,6 +100,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
               variant="contained"
               size="large"
               onClick={onDownload}
+              disabled={disabled}
               sx={{
                 borderRadius: 3,
                 px: 4,
@@ -113,6 +117,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
               color="secondary"
               size="large"
               onClick={onRegenerate}
+              disabled={disabled}
               sx={{
                 borderRadius: 3,
                 px: 4,

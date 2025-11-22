@@ -92,6 +92,7 @@ export default function Header() {
                 variant="text"
                 onClick={() => handleNavigation('/')}
                 sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+                data-navigation="true"
               >
                 홈
               </Button>
@@ -99,6 +100,7 @@ export default function Header() {
                 variant="text"
                 onClick={() => handleNavigation('/upload')}
                 sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+                data-navigation="true"
               >
                 실습하기
               </Button>
@@ -106,6 +108,7 @@ export default function Header() {
                 variant="text"
                 onClick={() => handleNavigation('/solve-questions')}
                 sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+                data-navigation="true"
               >
                 문제 풀기
               </Button>
@@ -204,15 +207,15 @@ export default function Header() {
               </>
             )}
             
-            <ListItemButton onClick={() => handleNavigation('/')}>
+            <ListItemButton onClick={() => handleNavigation('/')} data-navigation="true">
               <ListItemText primary="홈" primaryTypographyProps={{ fontSize: '1.1rem' }} />
             </ListItemButton>
             
-            <ListItemButton onClick={() => handleNavigation('/upload')}>
+            <ListItemButton onClick={() => handleNavigation('/upload')} data-navigation="true">
               <ListItemText primary="실습하기" primaryTypographyProps={{ fontSize: '1.1rem' }} />
             </ListItemButton>
             
-            <ListItemButton onClick={() => handleNavigation('/solve-questions')}>
+            <ListItemButton onClick={() => handleNavigation('/solve-questions')} data-navigation="true">
               <ListItemText primary="문제 풀기" primaryTypographyProps={{ fontSize: '1.1rem' }} />
             </ListItemButton>
             
