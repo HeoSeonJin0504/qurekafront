@@ -230,14 +230,30 @@ export default function UploadPage() {
   // 네비게이션 핸들러
   const handleNext = () => {
     if (state.mode === 'summary') {
-      if (state.activeStep === 1 && !state.summaryText) { state.setActiveStep(2); handlers.handleGenerateSummary(); }
-      else if (state.activeStep === 3 && !state.questionText) { state.setActiveStep(4); handlers.handleGenerateQuestion(); }
+      if (state.activeStep === 1 && !state.summaryText) { 
+        handlers.markStepCompleted(1); // 요약 설정 완료 표시
+        state.setActiveStep(2); 
+        handlers.handleGenerateSummary(); 
+      }
+      else if (state.activeStep === 3 && !state.questionText) { 
+        handlers.markStepCompleted(3); // 문제 설정 완료 표시
+        state.setActiveStep(4); 
+        handlers.handleGenerateQuestion(); 
+      }
       else state.setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     } else if (state.mode === 'question' && state.questionSource === 'upload') {
-      if (state.activeStep === 1 && !state.questionText) { state.setActiveStep(2); handlers.handleGenerateQuestionFromFile(); }
+      if (state.activeStep === 1 && !state.questionText) { 
+        handlers.markStepCompleted(1); // 문제 설정 완료 표시
+        state.setActiveStep(2); 
+        handlers.handleGenerateQuestionFromFile(); 
+      }
       else state.setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     } else if (state.mode === 'question' && state.questionSource === 'saved') {
-      if (state.activeStep === 1 && !state.questionText) { state.setActiveStep(2); handlers.handleGenerateQuestion(); }
+      if (state.activeStep === 1 && !state.questionText) { 
+        handlers.markStepCompleted(1); // 문제 설정 완료 표시
+        state.setActiveStep(2); 
+        handlers.handleGenerateQuestion(); 
+      }
       else state.setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     }
   };
