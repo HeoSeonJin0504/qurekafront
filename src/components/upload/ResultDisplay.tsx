@@ -60,6 +60,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
               minRows={12}
               value={text}
               onChange={(e) => onTextChange?.(e.target.value)}
+              placeholder="요약 내용이 여기에 표시됩니다"
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 3,
