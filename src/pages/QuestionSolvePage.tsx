@@ -857,7 +857,6 @@ export default function QuestionSolvePage() {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            minWidth: 400,
             bgcolor: snackbar.severity === "success" ? "#E8F9EE" : "#FFEBEE",
             color: snackbar.severity === "success" ? "#1a5d3a" : "#c62828",
             borderRadius: 2,
