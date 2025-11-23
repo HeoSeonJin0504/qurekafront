@@ -52,28 +52,28 @@ const CursorClick = styled(Box)(({ theme }) => ({
 // 서비스 플로우 단계 정의
 const steps = [
   {
-    title: "1단계: 파일 업로드",
-    description: "요약하고 싶은 문서를 선택하여 업로드합니다.",
+    title: "1단계: 기능 선택",
+    description: "요약 또는 문제 생성 중 원하는 기능을 선택하세요.",
     imageSrc: flowStep1,
-    clickPosition: { x: 60, y: 55 } // 클릭할 위치 (%)
+    clickPosition: { x: 35, y: 55 } // 클릭할 위치 (%)
   },
   {
-    title: "2단계: 요약 설정",
-    description: "분야, 난이도, 문장 수 등 세부 옵션을 설정합니다.",
+    title: "2단계: 파일 업로드",
+    description: "학습할 강의자료를 업로드하세요.",
     imageSrc: flowStep2,
     clickPosition: { x: 90, y: 65 }
   },
   {
-    title: "3단계: 요약 생성 실행",
-    description: "설정이 완료되면 요약 생성 버튼을 클릭합니다.",
+    title: "3단계: 설정 및 생성",
+    description: "원하는 옵션을 설정하고 생성 버튼을 클릭하세요.",
     imageSrc: flowStep3,
-    clickPosition: { x: 56, y: 83 }
+    clickPosition: { x: 60, y: 68 }
   },
   {
     title: "4단계: 요약 결과 확인",
     description: "생성된 요약 내용을 수정 및 다운로드 할 수 있습니다.",
     imageSrc: flowStep4,
-    clickPosition: { x: 94, y: 30 }
+    clickPosition: { x: 54, y: 72 }
   },
   {
     title: "5단계: 저장 또는 문제 생성",
