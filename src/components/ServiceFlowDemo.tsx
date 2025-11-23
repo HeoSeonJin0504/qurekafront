@@ -90,6 +90,7 @@ interface ServiceFlowDemoProps {
 const ServiceFlowDemo: React.FC<ServiceFlowDemoProps> = ({ maxWidth = '800px' }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [clickPosition, setClickPosition] = useState({ left: '0%', top: '0%' });
   const playInterval = useRef<number | null>(null);
   const screenContainerRef = useRef<HTMLDivElement>(null);
 
@@ -117,6 +118,24 @@ const ServiceFlowDemo: React.FC<ServiceFlowDemoProps> = ({ maxWidth = '800px' })
     };
   }, [isPlaying]);
 
+  // 클릭 위치 업데이트
+  useEffect(() => {
+    const updateClickPosition = () => {
+      if (!screenContainerRef.current || !steps[currentStep]?.clickPosition) return;
+      
+      const { x, y } = steps[currentStep].clickPosition;
+      setClickPosition({
+        left: `${x}%`,
+        top: `${y}%`
+      });
+    };
+
+    // 약간의 딜레이를 주어 DOM이 완전히 렌더링된 후 위치 계산
+    const timer = setTimeout(updateClickPosition, 50);
+
+    return () => clearTimeout(timer);
+  }, [currentStep]);
+
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -132,21 +151,6 @@ const ServiceFlowDemo: React.FC<ServiceFlowDemoProps> = ({ maxWidth = '800px' })
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
   };
-
-  // 현재 단계의 클릭 위치 계산
-  const getClickPosition = () => {
-    if (!screenContainerRef.current || !steps[currentStep]?.clickPosition) return { left: 0, top: 0 };
-    
-    const containerRect = screenContainerRef.current.getBoundingClientRect();
-    const { x, y } = steps[currentStep].clickPosition;
-    
-    return {
-      left: `${x}%`,
-      top: `${y}%`
-    };
-  };
-
-  const clickPosition = getClickPosition();
 
   return (
     <DemoContainer sx={{ maxWidth }}>
