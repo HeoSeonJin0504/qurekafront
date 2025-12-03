@@ -23,7 +23,7 @@ import Header from '../components/Header'
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('')
+  const [userid, setUserid] = useState('') // 🔧 email → userid 변경
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(false)
@@ -43,7 +43,7 @@ export default function Login() {
     setIsLoading(true) // 🆕 로딩 시작
     
     try {
-      const res = await userAPI.login(email, password, rememberMe)
+      const res = await userAPI.login(userid, password, rememberMe) // 🔧 email → userid 변경
       if (res.data.success) {
         login(res.data.tokens.accessToken, res.data.user)
         navigate('/')
@@ -100,10 +100,10 @@ export default function Login() {
               margin="normal"
               label="아이디"
               variant="outlined"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              value={userid} // 🔧 email → userid 변경
+              onChange={e => setUserid(e.target.value)} // 🔧 setEmail → setUserid 변경
               autoComplete="off"
-              disabled={isLoading}
+              disabled={isLoading} // 🆕 로딩 중 비활성화
             />
             <TextField
               fullWidth
@@ -111,11 +111,11 @@ export default function Login() {
               label="비밀번호"
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
-              placeholder="비밀번호를 입력하세요" 
+              placeholder="8자 이상 입력하세요." // 🔧 12자 → 8자로 수정 (회원가입 정책과 일치)
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="off"
-              disabled={isLoading}
+              disabled={isLoading} // 🆕 로딩 중 비활성화
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
