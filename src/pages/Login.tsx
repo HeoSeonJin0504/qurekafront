@@ -103,7 +103,7 @@ export default function Login() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               autoComplete="off"
-              disabled={isLoading} // 🆕 로딩 중 비활성화
+              disabled={isLoading}
             />
             <TextField
               fullWidth
@@ -111,11 +111,11 @@ export default function Login() {
               label="비밀번호"
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
-              placeholder="12자 이상 입력하세요."
+              placeholder="비밀번호를 입력하세요" 
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="off"
-              disabled={isLoading} // 🆕 로딩 중 비활성화
+              disabled={isLoading}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
