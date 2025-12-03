@@ -46,25 +46,101 @@ export default function SignupPage() {
   
   // 유효성 검사 상태
   const [phoneError, setPhoneError] = useState<string>('')
+  const [userIdError, setUserIdError] = useState<string>('') // 🆕 아이디 에러
+  const [passwordError, setPasswordError] = useState<string>('') // 🆕 비밀번호 에러
   
   // 아이디 중복 확인 상태
   const [isIdChecked, setIsIdChecked] = useState<boolean>(false)
   const [isIdValid, setIsIdValid] = useState<boolean>(false)
   const [idCheckMessage, setIdCheckMessage] = useState<string>('')
   
-  // 🆕 로딩 상태 추가
+  // 로딩 상태
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [isCheckingId, setIsCheckingId] = useState<boolean>(false)
+
+  // 🆕 아이디 유효성 검사 함수
+  const validateUserId = (userId: string) => {
+    if (!userId) {
+      setUserIdError('')
+      return false
+    }
+    
+    // 5~20자의 영문 소문자, 숫자와 특수기호 -, _ 만 사용 가능
+    const userIdRegex = /^[a-z0-9_-]{5,20}$/
+    
+    if (userId.length < 5) {
+      setUserIdError('아이디는 최소 5자 이상이어야 합니다.')
+      return false
+    }
+    
+    if (userId.length > 20) {
+      setUserIdError('아이디는 최대 20자까지 가능합니다.')
+      return false
+    }
+    
+    if (!userIdRegex.test(userId)) {
+      setUserIdError('영문 소문자, 숫자, -, _ 만 사용 가능합니다.')
+      return false
+    }
+    
+    setUserIdError('')
+    return true
+  }
+
+  // 🆕 비밀번호 유효성 검사 함수
+  const validatePassword = (password: string) => {
+    if (!password) {
+      setPasswordError('')
+      return false
+    }
+    
+    // 8~16자 영문 대/소문자, 숫자, 특수문자
+    const lengthValid = password.length >= 8 && password.length <= 16
+    
+    if (!lengthValid) {
+      setPasswordError('비밀번호는 8~16자여야 합니다.')
+      return false
+    }
+    
+    // 사용 가능한 특수문자: ! " # $ % & ' ( ) * + , - . / : ; ? @ [ \ ] ^ _ ` { | } ~
+    const allowedCharsRegex = /^[A-Za-z0-9!"#$%&'()*+,\-./:;?@[\\\]^_`{|}~]+$/
+    
+    if (!allowedCharsRegex.test(password)) {
+      setPasswordError('허용되지 않은 문자가 포함되어 있습니다.')
+      return false
+    }
+    
+    // 영문, 숫자, 특수문자 포함 여부 확인
+    const hasLetter = /[A-Za-z]/.test(password)
+    const hasNumber = /[0-9]/.test(password)
+    const hasSpecial = /[!"#$%&'()*+,\-./:;?@[\\\]^_`{|}~]/.test(password)
+    
+    const combinationCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length
+    
+    if (combinationCount < 2) {
+      setPasswordError('영문, 숫자, 특수문자 중 2가지 이상 조합해야 합니다.')
+      return false
+    }
+    
+    setPasswordError('')
+    return true
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
     
-    // 아이디 변경 시 중복확인 상태 초기화
+    // 아이디 변경 시 중복확인 상태 초기화 및 유효성 검사
     if (name === 'userId') {
       setIsIdChecked(false)
       setIsIdValid(false)
       setIdCheckMessage('')
+      validateUserId(value) // 🆕 실시간 유효성 검사
+    }
+    
+    // 🆕 비밀번호 변경 시 유효성 검사
+    if (name === 'password') {
+      validatePassword(value)
     }
     
     // 전화번호 형식 검증
@@ -98,50 +174,65 @@ export default function SignupPage() {
   }
 
   const handleIdCheck = async () => {
-    // 입력 값 검증
+    // 🆕 아이디 유효성 검사 먼저 수행
     if (!form.userId.trim()) {
-      setIdCheckMessage('아이디를 입력해주세요.');
-      setIsIdChecked(true);
-      setIsIdValid(false);
-      return;
+      setIdCheckMessage('아이디를 입력해주세요.')
+      setIsIdChecked(true)
+      setIsIdValid(false)
+      return
+    }
+    
+    if (!validateUserId(form.userId)) {
+      setIdCheckMessage('아이디 형식이 올바르지 않습니다.')
+      setIsIdChecked(true)
+      setIsIdValid(false)
+      return
     }
 
-    // 🆕 중복 확인 중 버튼 비활성화
-    setIsCheckingId(true);
+    setIsCheckingId(true)
     
     try {
       const { data } = await userAPI.checkUserid(form.userId)
-      setIdCheckMessage('사용 가능한 아이디입니다.'); 
-      setIsIdChecked(true);
-      setIsIdValid(true);
+      setIdCheckMessage('사용 가능한 아이디입니다.')
+      setIsIdChecked(true)
+      setIsIdValid(true)
     } catch (err: any) {
-      // 백엔드에서 오는 실제 오류 메시지 표시
       if (err.response?.data?.message) {
-        setIdCheckMessage(err.response.data.message);
+        setIdCheckMessage(err.response.data.message)
       } else {
-        setIdCheckMessage('중복 확인 중 오류가 발생했습니다.');
+        setIdCheckMessage('중복 확인 중 오류가 발생했습니다.')
       }
-      setIsIdChecked(true);
-      setIsIdValid(false);
-      console.error('ID 중복 확인 오류:', err);
+      setIsIdChecked(true)
+      setIsIdValid(false)
+      console.error('ID 중복 확인 오류:', err)
     } finally {
-      // 🆕 로딩 상태 해제
-      setIsCheckingId(false);
+      setIsCheckingId(false)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 🆕 이미 제출 중이면 중복 실행 방지
     if (isSubmitting) {
-      return;
+      return
+    }
+    
+    // 🆕 아이디 유효성 검사
+    if (!validateUserId(form.userId)) {
+      alert('아이디 형식이 올바르지 않습니다.')
+      return
     }
     
     // 아이디 중복확인 여부 검증
     if (!isIdChecked || !isIdValid) {
-      alert('아이디 중복 확인이 필요합니다.');
-      return;
+      alert('아이디 중복 확인이 필요합니다.')
+      return
+    }
+    
+    // 🆕 비밀번호 유효성 검사
+    if (!validatePassword(form.password)) {
+      alert('비밀번호 형식이 올바르지 않습니다.')
+      return
     }
     
     // 필수 필드 검증
@@ -164,8 +255,7 @@ export default function SignupPage() {
       return
     }
     
-    // 🆕 제출 시작 - 버튼 비활성화
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     
     try {
       await userAPI.register({
@@ -183,32 +273,26 @@ export default function SignupPage() {
       const errorMessage = err.response?.data?.message || err.message
       const statusCode = err.response?.status
       
-      // 🆕 429 에러 처리 (Rate Limit 또는 동시 요청)
       if (statusCode === 429) {
         if (errorMessage.includes('동시')) {
-          alert('회원가입 처리 중입니다. 잠시 후 다시 시도해주세요.');
+          alert('회원가입 처리 중입니다. 잠시 후 다시 시도해주세요.')
         } else {
-          alert('너무 많은 회원가입 시도가 있었습니다. 15분 후에 다시 시도해주세요.');
+          alert('너무 많은 회원가입 시도가 있었습니다. 15분 후에 다시 시도해주세요.')
         }
-      } 
-      // 🆕 409 에러 처리 (중복 데이터)
-      else if (statusCode === 409) {
+      } else if (statusCode === 409) {
         if (errorMessage.includes('전화번호')) {
-          alert('이미 등록된 전화번호입니다.');
+          alert('이미 등록된 전화번호입니다.')
         } else if (errorMessage.includes('이름')) {
-          alert('이미 등록된 이름입니다.');
+          alert('이미 등록된 이름입니다.')
         } else if (errorMessage.includes('아이디')) {
-          alert('이미 등록된 아이디입니다.');
-          // 아이디 중복 확인 상태 초기화
-          setIsIdChecked(false);
-          setIsIdValid(false);
-          setIdCheckMessage('');
+          alert('이미 등록된 아이디입니다.')
+          setIsIdChecked(false)
+          setIsIdValid(false)
+          setIdCheckMessage('')
         } else {
-          alert(errorMessage);
+          alert(errorMessage)
         }
-      }
-      // 기존 에러 처리
-      else if (errorMessage.includes('이미 등록된 전화번호')) {
+      } else if (errorMessage.includes('이미 등록된 전화번호')) {
         alert('이미 등록된 전화번호입니다.')
       } else if (errorMessage.includes('이미 등록된 이름')) {
         alert('이미 등록된 이름입니다.')
@@ -216,8 +300,7 @@ export default function SignupPage() {
         alert(errorMessage)
       }
     } finally {
-      // 🆕 제출 완료 - 버튼 활성화
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 
@@ -265,18 +348,19 @@ export default function SignupPage() {
                   required
                   name="userId"
                   label="아이디"
-                  placeholder="사용할 아이디 입력"
+                  placeholder="5~20자 영문 소문자, 숫자, -, _"
                   value={form.userId}
                   onChange={handleChange}
                   sx={{ flex: 1 }}
-                  error={isIdChecked && !isIdValid}
-                  disabled={isSubmitting} // 🆕 제출 중 비활성화
+                  error={(isIdChecked && !isIdValid) || !!userIdError}
+                  helperText={userIdError || "5~20자의 영문 소문자, 숫자, -, _ 만 사용 가능"}
+                  disabled={isSubmitting}
                 />
                 <Button
                   variant="outlined"
                   onClick={handleIdCheck}
                   sx={{ width: 120 }}
-                  disabled={isCheckingId || isSubmitting} // 🆕 로딩 중 비활성화
+                  disabled={isCheckingId || isSubmitting || !!userIdError}
                 >
                   {isCheckingId ? <CircularProgress size={20} /> : '중복 확인'}
                 </Button>
@@ -306,7 +390,7 @@ export default function SignupPage() {
                 value={form.name}
                 onChange={handleChange}
                 sx={{ flex: 1 }}
-                disabled={isSubmitting} // 🆕
+                disabled={isSubmitting}
               />
               <TextField
                 fullWidth
@@ -318,7 +402,7 @@ export default function SignupPage() {
                 value={form.age}
                 onChange={handleChange}
                 sx={{ flex: 1 }}
-                disabled={isSubmitting} // 🆕
+                disabled={isSubmitting}
               />
             </Stack>
 
@@ -331,7 +415,7 @@ export default function SignupPage() {
                   label="성별"
                   value={form.gender}
                   onChange={handleGenderChange}
-                  disabled={isSubmitting} // 🆕
+                  disabled={isSubmitting}
                 >
                   <MenuItem value="">
                     <em>선택하세요</em>
@@ -354,7 +438,7 @@ export default function SignupPage() {
                 inputProps={{
                   maxLength: 13 // 하이픈 포함 최대 길이
                 }}
-                disabled={isSubmitting} // 🆕
+                disabled={isSubmitting}
               />
             </Stack>
 
@@ -367,7 +451,7 @@ export default function SignupPage() {
               placeholder="이메일 입력 (선택사항)"
               value={form.email}
               onChange={handleChange}
-              disabled={isSubmitting} // 🆕
+              disabled={isSubmitting}
             />
 
             {/* 5행: 비밀번호 */}
@@ -377,10 +461,12 @@ export default function SignupPage() {
               name="password"
               label="비밀번호"
               type="password"
-              placeholder="비밀번호 입력"
+              placeholder="8~16자 영문, 숫자, 특수문자 조합"
               value={form.password}
               onChange={handleChange}
-              disabled={isSubmitting} // 🆕
+              error={!!passwordError}
+              helperText={passwordError || "8~16자 영문, 숫자, 특수문자 중 2가지 이상 조합"}
+              disabled={isSubmitting}
             />
 
             {/* 6행: 비밀번호 확인 */}
@@ -399,7 +485,7 @@ export default function SignupPage() {
                   ? "비밀번호가 일치하지 않습니다"
                   : ""
               }
-              disabled={isSubmitting} // 🆕
+              disabled={isSubmitting}
             />
 
             {/* 회원가입 버튼 */}
@@ -408,7 +494,7 @@ export default function SignupPage() {
                 variant="contained" 
                 type="submit" 
                 sx={{ width: 200, height: 48 }}
-                disabled={!!phoneError || !isIdValid || !isIdChecked || isSubmitting} // 🆕 제출 중 비활성화
+                disabled={!!phoneError || !!userIdError || !!passwordError || !isIdValid || !isIdChecked || isSubmitting}
               >
                 {isSubmitting ? <CircularProgress size={24} color="inherit" /> : '회원가입'}
               </Button>
