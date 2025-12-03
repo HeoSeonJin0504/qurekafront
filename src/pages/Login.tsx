@@ -11,7 +11,8 @@ import {
   Paper,
   Alert,
   Box,
-  Typography
+  Typography,
+  CircularProgress // 🆕 추가
 } from '@mui/material'
 import { Visibility, VisibilityOff, Home, Google } from '@mui/icons-material'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
@@ -25,18 +26,25 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [rememberMe, setRememberMe] = useState(false) // 로그인 정보 기억 여부
+  const [rememberMe, setRememberMe] = useState(false)
+  const [isLoading, setIsLoading] = useState(false) // 🆕 로딩 상태 추가
   const navigate = useNavigate()
   const { login } = useAuth()
 
   const handleClickShowPassword = () => setShowPassword(prev => !prev)
 
   const handleLogin = async () => {
+    // 🆕 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) {
+      return;
+    }
+    
     setError(null)
+    setIsLoading(true) // 🆕 로딩 시작
+    
     try {
       const res = await userAPI.login(email, password, rememberMe)
       if (res.data.success) {
-        // 실제 응답 구조: { success, tokens: { accessToken }, user }
         login(res.data.tokens.accessToken, res.data.user)
         navigate('/')
       } else {
@@ -44,7 +52,17 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error(err)
-      setError(err.response?.data?.message || '서버 오류로 로그인할 수 없습니다.')
+      const statusCode = err.response?.status
+      const errorMessage = err.response?.data?.message || '서버 오류로 로그인할 수 없습니다.'
+      
+      // 🆕 429 에러 처리
+      if (statusCode === 429) {
+        setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
+      } else {
+        setError(errorMessage)
+      }
+    } finally {
+      setIsLoading(false) // 🆕 로딩 종료
     }
   }
 
@@ -85,6 +103,7 @@ export default function Login() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               autoComplete="off"
+              disabled={isLoading} // 🆕 로딩 중 비활성화
             />
             <TextField
               fullWidth
@@ -96,10 +115,11 @@ export default function Login() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="off"
+              disabled={isLoading} // 🆕 로딩 중 비활성화
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={handleClickShowPassword} edge="end">
+                    <IconButton onClick={handleClickShowPassword} edge="end" disabled={isLoading}>
                       {showPassword ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
@@ -108,11 +128,12 @@ export default function Login() {
             />
 
             <Box display="flex" justifyContent="space-between" alignItems="center" mt={1} mb={2}>
-            <FormControlLabel
+              <FormControlLabel
                 control={
                   <Checkbox
                     checked={rememberMe}
                     onChange={e => setRememberMe(e.target.checked)}
+                    disabled={isLoading} // 🆕 로딩 중 비활성화
                   />
                 }
                 label="로그인 정보 기억"
@@ -129,8 +150,9 @@ export default function Login() {
               fullWidth
               sx={{ mb: 2 }}
               onClick={handleLogin}
+              disabled={isLoading} // 🆕 로딩 중 비활성화
             >
-              로그인
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : '로그인'}
             </Button>
 
             <Box display="flex" justifyContent="center" gap={2} mt={1}>

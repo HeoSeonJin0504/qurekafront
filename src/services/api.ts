@@ -106,6 +106,11 @@ backendAPI.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
     
+    // 🆕 429 에러 처리 (Rate Limit) - 토큰 갱신 시도 없이 바로 반환
+    if (error.response?.status === 429) {
+      return Promise.reject(error);
+    }
+    
     // 401 Unauthorized 에러이고, 재시도하지 않은 요청인 경우
     if (error.response?.status === 401 && originalRequest && !originalRequest.headers?.['X-Retry']) {
       try {
@@ -120,7 +125,7 @@ backendAPI.interceptors.response.use(
         const response = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/auth/refresh-token`, 
           { refreshToken },
-          { withCredentials: false } // 쿠키 포함 설정
+          { withCredentials: false }
         );
         
         // 새 액세스 토큰 저장
@@ -129,7 +134,6 @@ backendAPI.interceptors.response.use(
         
         // 원래 요청 재시도
         if (originalRequest) {
-          // 타입 안전하게 헤더를 설정
           originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           originalRequest.headers['X-Retry'] = 'true';
@@ -138,7 +142,6 @@ backendAPI.interceptors.response.use(
         }
       } catch (refreshError) {
         console.error('토큰 갱신 실패:', refreshError);
-        // 토큰 갱신 실패 시 토큰 제거
         tokenStorage.clearTokens();
         return Promise.reject(refreshError);
       }

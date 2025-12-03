@@ -11,7 +11,8 @@ import {
   MenuItem,
   SelectChangeEvent,
   Stack,
-  FormHelperText
+  FormHelperText,
+  CircularProgress
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
@@ -50,6 +51,10 @@ export default function SignupPage() {
   const [isIdChecked, setIsIdChecked] = useState<boolean>(false)
   const [isIdValid, setIsIdValid] = useState<boolean>(false)
   const [idCheckMessage, setIdCheckMessage] = useState<string>('')
+  
+  // 🆕 로딩 상태 추가
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [isCheckingId, setIsCheckingId] = useState<boolean>(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -101,6 +106,9 @@ export default function SignupPage() {
       return;
     }
 
+    // 🆕 중복 확인 중 버튼 비활성화
+    setIsCheckingId(true);
+    
     try {
       const { data } = await userAPI.checkUserid(form.userId)
       setIdCheckMessage('사용 가능한 아이디입니다.'); 
@@ -116,11 +124,19 @@ export default function SignupPage() {
       setIsIdChecked(true);
       setIsIdValid(false);
       console.error('ID 중복 확인 오류:', err);
+    } finally {
+      // 🆕 로딩 상태 해제
+      setIsCheckingId(false);
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // 🆕 이미 제출 중이면 중복 실행 방지
+    if (isSubmitting) {
+      return;
+    }
     
     // 아이디 중복확인 여부 검증
     if (!isIdChecked || !isIdValid) {
@@ -148,13 +164,16 @@ export default function SignupPage() {
       return
     }
     
+    // 🆕 제출 시작 - 버튼 비활성화
+    setIsSubmitting(true);
+    
     try {
       await userAPI.register({
         userid: form.userId,
         name: form.name,
         age: Number(form.age),
         gender: form.gender,
-        phone: cleanPhone, // 하이픈 제거하여 저장
+        phone: cleanPhone,
         email: form.email || undefined,
         password: form.password
       })
@@ -162,15 +181,43 @@ export default function SignupPage() {
       navigate('/login')
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message
+      const statusCode = err.response?.status
       
-      // 오류 메시지에 따른 안내 처리
-      if (errorMessage.includes('이미 등록된 전화번호')) {
+      // 🆕 429 에러 처리 (Rate Limit 또는 동시 요청)
+      if (statusCode === 429) {
+        if (errorMessage.includes('동시')) {
+          alert('회원가입 처리 중입니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          alert('너무 많은 회원가입 시도가 있었습니다. 15분 후에 다시 시도해주세요.');
+        }
+      } 
+      // 🆕 409 에러 처리 (중복 데이터)
+      else if (statusCode === 409) {
+        if (errorMessage.includes('전화번호')) {
+          alert('이미 등록된 전화번호입니다.');
+        } else if (errorMessage.includes('이름')) {
+          alert('이미 등록된 이름입니다.');
+        } else if (errorMessage.includes('아이디')) {
+          alert('이미 등록된 아이디입니다.');
+          // 아이디 중복 확인 상태 초기화
+          setIsIdChecked(false);
+          setIsIdValid(false);
+          setIdCheckMessage('');
+        } else {
+          alert(errorMessage);
+        }
+      }
+      // 기존 에러 처리
+      else if (errorMessage.includes('이미 등록된 전화번호')) {
         alert('이미 등록된 전화번호입니다.')
       } else if (errorMessage.includes('이미 등록된 이름')) {
         alert('이미 등록된 이름입니다.')
       } else {
         alert(errorMessage)
       }
+    } finally {
+      // 🆕 제출 완료 - 버튼 활성화
+      setIsSubmitting(false);
     }
   }
 
@@ -223,13 +270,15 @@ export default function SignupPage() {
                   onChange={handleChange}
                   sx={{ flex: 1 }}
                   error={isIdChecked && !isIdValid}
+                  disabled={isSubmitting} // 🆕 제출 중 비활성화
                 />
                 <Button
                   variant="outlined"
                   onClick={handleIdCheck}
                   sx={{ width: 120 }}
+                  disabled={isCheckingId || isSubmitting} // 🆕 로딩 중 비활성화
                 >
-                  중복 확인
+                  {isCheckingId ? <CircularProgress size={20} /> : '중복 확인'}
                 </Button>
               </Stack>
               {isIdChecked && (
@@ -257,6 +306,7 @@ export default function SignupPage() {
                 value={form.name}
                 onChange={handleChange}
                 sx={{ flex: 1 }}
+                disabled={isSubmitting} // 🆕
               />
               <TextField
                 fullWidth
@@ -268,6 +318,7 @@ export default function SignupPage() {
                 value={form.age}
                 onChange={handleChange}
                 sx={{ flex: 1 }}
+                disabled={isSubmitting} // 🆕
               />
             </Stack>
 
@@ -280,6 +331,7 @@ export default function SignupPage() {
                   label="성별"
                   value={form.gender}
                   onChange={handleGenderChange}
+                  disabled={isSubmitting} // 🆕
                 >
                   <MenuItem value="">
                     <em>선택하세요</em>
@@ -302,6 +354,7 @@ export default function SignupPage() {
                 inputProps={{
                   maxLength: 13 // 하이픈 포함 최대 길이
                 }}
+                disabled={isSubmitting} // 🆕
               />
             </Stack>
 
@@ -314,6 +367,7 @@ export default function SignupPage() {
               placeholder="이메일 입력 (선택사항)"
               value={form.email}
               onChange={handleChange}
+              disabled={isSubmitting} // 🆕
             />
 
             {/* 5행: 비밀번호 */}
@@ -326,6 +380,7 @@ export default function SignupPage() {
               placeholder="비밀번호 입력"
               value={form.password}
               onChange={handleChange}
+              disabled={isSubmitting} // 🆕
             />
 
             {/* 6행: 비밀번호 확인 */}
@@ -344,6 +399,7 @@ export default function SignupPage() {
                   ? "비밀번호가 일치하지 않습니다"
                   : ""
               }
+              disabled={isSubmitting} // 🆕
             />
 
             {/* 회원가입 버튼 */}
@@ -352,9 +408,9 @@ export default function SignupPage() {
                 variant="contained" 
                 type="submit" 
                 sx={{ width: 200, height: 48 }}
-                disabled={!!phoneError || !isIdValid || !isIdChecked} // 전화번호 오류 또는 아이디 중복확인을 하지 않은 경우 버튼 비활성화
+                disabled={!!phoneError || !isIdValid || !isIdChecked || isSubmitting} // 🆕 제출 중 비활성화
               >
-                회원가입
+                {isSubmitting ? <CircularProgress size={24} color="inherit" /> : '회원가입'}
               </Button>
             </Box>
           </Stack>
