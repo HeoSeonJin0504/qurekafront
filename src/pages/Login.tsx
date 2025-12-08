@@ -8,11 +8,10 @@ import {
   IconButton,
   InputAdornment,
   TextField,
-  Paper,
   Alert,
   Box,
   Typography,
-  CircularProgress // 🆕 추가
+  CircularProgress
 } from '@mui/material'
 import { Visibility, VisibilityOff, Home, Google } from '@mui/icons-material'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
@@ -23,11 +22,11 @@ import Header from '../components/Header'
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
-  const [userid, setUserid] = useState('') // 🔧 email → userid 변경
+  const [userid, setUserid] = useState('') 
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(false)
-  const [isLoading, setIsLoading] = useState(false) // 🆕 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(false) 
   const navigate = useNavigate()
   const { login } = useAuth()
 
