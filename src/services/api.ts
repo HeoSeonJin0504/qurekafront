@@ -151,16 +151,6 @@ backendAPI.interceptors.response.use(
   }
 );
 
-// FastAPI (AI 생성 전용)
-export const aiAPI = axios.create({
-  baseURL: import.meta.env.VITE_FASTAPI_URL,
-  withCredentials: false,
-  headers: {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': '1'
-  }
-});
-
 // 사용자 관리 API 개선
 export const userAPI = {
   checkUserid: (userid: string) =>
@@ -245,25 +235,19 @@ export const userAPI = {
   }
 };
 
-// AI 요약 생성 API (FastAPI) 
+// AI 요약 생성 API (Node.js)
 export const aiSummaryAPI = {
   generateSummary: (formData: FormData) =>
-    aiAPI.post('/summarize', formData, {
+    backendAPI.post('/ai/summarize', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 };
 
-// AI 문제 생성 API (FastAPI)
+// AI 문제 생성 API (Node.js)
 export const aiQuestionAPI = {
   generateQuestions: (data: any) =>
-    aiAPI.post('/generate', data, {
+    backendAPI.post('/ai/generate', data, {
       headers: { 'Content-Type': 'application/json' },
-    }),
-  
-  // 파일에서 직접 문제 생성 API 추가
-  generateQuestionsFromFile: (formData: FormData) =>
-    aiAPI.post('/generate-from-file', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
     }),
 };
 
@@ -403,9 +387,13 @@ export const favoriteAPI = {
       `/favorites/folders/${userId}`
     ),
 
-  // 🆕 기본 폴더 생성 보장 (백엔드에서 중복 체크)
+  // 기본 폴더 생성 보장 (백엔드에서 중복 체크)
   ensureDefaultFolder: (userId: number) =>
     backendAPI.post('/favorites/folders/ensure-default', { userId }),
+
+  // 기본 폴더 조회/생성
+  getDefaultFolder: (userId: number) =>
+    backendAPI.get(`/favorites/folders/default/${userId}`),
 
   // 즐겨찾기 폴더 생성
   createFolder: (data: { userId: number; folderName: string; description?: string }) =>

@@ -110,7 +110,6 @@ export default function Login() {
               label="비밀번호"
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
-              placeholder="8자 이상 입력하세요." // 🔧 12자 → 8자로 수정 (회원가입 정책과 일치)
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="off"
