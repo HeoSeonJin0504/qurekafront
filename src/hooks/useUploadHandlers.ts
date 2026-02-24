@@ -140,24 +140,23 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
 
     const formData = new FormData();
     formData.append('file', state.file);
-    formData.append('generation_type', `문제 생성_${aiQuestionPromptKeys_Korean[state.qTab]}`);
+    formData.append('questionType', aiQuestionPromptKeys_Korean[state.qTab]);
     formData.append('field', state.qField);
     formData.append('level', state.qLevel);
-    formData.append('question_count', String(state.qCount));
-    
-    if (state.qTab === 0) {
-      formData.append('choice_count', String(state.optCount));
-      formData.append('choice_format', state.optionFormat);
-    }
-    if (state.qTab === 1) formData.append('array_choice_count', String(state.optCount));
-    if (state.qTab === 2) formData.append('blank_count', String(state.blankCount));
+    formData.append('questionCount', String(state.qCount));
 
     try {
-      const res = await aiQuestionAPI.generateQuestionsFromFile(formData);
-      state.setQuestionText(res.data.result);
-      const isValid = parseQuestionJson(res.data.result);
+      const res = await aiQuestionAPI.generateQuestions(formData);
+      // 백엔드 응답: { questions, parsed } 구조
+      const rawQuestions = res.data.parsed
+        ? JSON.stringify({ questions: res.data.questions })
+        : res.data.questions;
+      state.setQuestionText(typeof rawQuestions === 'string' ? rawQuestions : JSON.stringify(rawQuestions));
+      const isValid = parseQuestionJson(
+        typeof rawQuestions === 'string' ? rawQuestions : JSON.stringify(rawQuestions)
+      );
       if (!isValid) state.setQuestionError(true);
-      markStepCompleted(2); // 문제 생성 완료 표시 (설정은 handleNext에서 이미 완료)
+      markStepCompleted(2);
       state.setActiveStep(2);
     } catch (error: any) {
       console.error('문제 생성 오류:', error);
@@ -181,23 +180,21 @@ export const useUploadHandlers = (state: ReturnType<typeof useUploadState>) => {
 
     try {
       const payload: any = {
-        generation_type: `문제 생성_${aiQuestionPromptKeys_Korean[state.qTab]}`,
-        summary_text: state.summaryText,
+        questionType: aiQuestionPromptKeys_Korean[state.qTab],
+        summaryText: state.summaryText,
         field: state.qField,
         level: state.qLevel,
-        question_count: state.qCount,
+        questionCount: state.qCount,
       };
-      
-      if (state.qTab === 0) {
-        payload.choice_count = state.optCount;
-        payload.choice_format = state.optionFormat;
-      }
-      if (state.qTab === 1) payload.array_choice_count = state.optCount;
-      if (state.qTab === 2) payload.blank_count = state.blankCount;
 
       const res = await aiQuestionAPI.generateQuestions(payload);
-      state.setQuestionText(res.data.result);
-      const isValid = parseQuestionJson(res.data.result);
+      // 백엔드 응답: { questions, parsed } 구조
+      const rawQuestions = res.data.parsed
+        ? JSON.stringify({ questions: res.data.questions })
+        : res.data.questions;
+      const questionStr = typeof rawQuestions === 'string' ? rawQuestions : JSON.stringify(rawQuestions);
+      state.setQuestionText(questionStr);
+      const isValid = parseQuestionJson(questionStr);
       if (!isValid) state.setQuestionError(true);
       
       if (state.mode === 'summary') {
