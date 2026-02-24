@@ -1,507 +1,458 @@
-import React, { useState } from 'react'
-import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
-  Stack,
-  FormHelperText,
-  CircularProgress
-} from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
-import { userAPI } from '../services/api'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorIcon from '@mui/icons-material/Error'
+// src/components/Header.tsx
+import React, { useState, useEffect, useRef } from 'react'
+import styled, { css, keyframes, createGlobalStyle } from 'styled-components'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import LogoImage from '../assets/images/큐레카_로고 이미지.png'
 
-interface SignUpForm {
-  userId: string
-  name: string
-  age: string
-  gender: string
-  phone: string
-  email: string
-  password: string
-  confirmPassword: string
-}
+// ── 애니메이션 ──────────────────────────────────────────────
+const underlineAnim = keyframes`
+  from { width: 0; left: 50%; }
+  to   { width: 100%; left: 0; }
+`
 
-export default function SignupPage() {
+const slideDown = keyframes`
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+`
+
+// ── 전역: 드로어 열릴 때 스크롤 잠금 ────────────────────────
+const NoScroll = createGlobalStyle<{ $lock: boolean }>`
+  body { overflow: ${({ $lock }) => ($lock ? 'hidden' : '')}; }
+`
+
+// ── 헤더 쉘 ────────────────────────────────────────────────
+const HeaderShell = styled.header`
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  width: 100%;
+  height: 70px;
+  padding: 0 40px;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+
+  @media (max-width: 768px) {
+    padding: 0 20px;
+    height: 60px;
+  }
+`
+
+// ── 로고 ────────────────────────────────────────────────────
+const LogoLink = styled(NavLink)`
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+`
+
+const Logo = styled.img`
+  height: 52px;
+  cursor: pointer;
+  @media (max-width: 768px) { height: 40px; }
+`
+
+// ── 데스크톱 Nav ─────────────────────────────────────────────
+const DesktopNav = styled.ul`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 70px;
+
+  li { display: flex; align-items: center; height: 100%; }
+
+  a {
+    text-decoration: none;
+    color: #333;
+    position: relative;
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    white-space: nowrap;
+
+    &:hover { background: #f0f0f0; }
+
+    &.active {
+      font-weight: 700;
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 2px;
+        height: 3px;
+        background: #3b82f6;
+        border-radius: 2px;
+        animation: ${underlineAnim} 0.3s ease-out forwards;
+      }
+    }
+  }
+
+  @media (max-width: 768px) { display: none; }
+`
+
+// ── 유저 배지 + 드롭다운 ────────────────────────────────────
+const UserBadgeWrap = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`
+
+const UserBadge = styled.button`
+  background: #f0f7ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 1em;
+  font-weight: 700;
+  cursor: pointer;
+  color: #1e3a8a;
+  transition: background 0.2s;
+  &:hover { background: #dbeafe; }
+`
+
+const Dropdown = styled.div`
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 130px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  overflow: hidden;
+  animation: ${slideDown} 0.18s ease;
+  z-index: 300;
+`
+
+const DropdownBtn = styled.button<{ $danger?: boolean }>`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: ${({ $danger }) => ($danger ? '#dc2626' : '#333')};
+  &:hover { background: ${({ $danger }) => ($danger ? '#fff1f2' : '#f5f5f5')}; }
+`
+
+// ── 로그인 링크 (비로그인 데스크톱) ─────────────────────────
+const LoginNavLink = styled(NavLink)`
+  text-decoration: none;
+  font-size: 1em !important;
+  font-weight: 700 !important;
+  padding: 6px 18px !important;
+  border-radius: 8px;
+  border: 2px solid #3b82f6;
+  color: #3b82f6 !important;
+  background: none;
+  transition: background 0.2s, color 0.2s !important;
+  white-space: nowrap;
+
+  &:hover {
+    background: #3b82f6 !important;
+    color: #fff !important;
+  }
+`
+
+// ── 햄버거 버튼 ──────────────────────────────────────────────
+const HamburgerBtn = styled.button<{ $open: boolean }>`
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  &:hover { background: #f0f0f0; }
+
+  span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: #333;
+    border-radius: 2px;
+    transition: transform 0.25s, opacity 0.25s;
+  }
+
+  ${({ $open }) => $open && css`
+    span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  `}
+
+  @media (max-width: 768px) { display: flex; }
+`
+
+// ── 모바일 오버레이 ──────────────────────────────────────────
+const MobileOverlay = styled.div<{ $open: boolean }>`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.38);
+    z-index: 150;
+    opacity: ${({ $open }) => ($open ? 1 : 0)};
+    pointer-events: ${({ $open }) => ($open ? 'auto' : 'none')};
+    transition: opacity 0.25s;
+  }
+`
+
+// ── 모바일 슬라이드다운 메뉴 ─────────────────────────────────
+const MobileMenu = styled.nav<{ $open: boolean }>`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    z-index: 180;
+    padding: 6px 0 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+    transform: ${({ $open }) => ($open ? 'translateY(0)' : 'translateY(-110%)')};
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  }
+`
+
+const MobileNavItem = styled(NavLink)`
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  text-decoration: none;
+  color: #374151;
+  font-size: 1.05em;
+  font-weight: 600;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover, &.active {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+`
+
+const MobileUserSection = styled.div`
+  padding: 12px 24px 4px;
+  border-top: 2px solid #f0f0f0;
+  margin-top: 4px;
+`
+
+const MobileUserLabel = styled.p`
+  font-size: 0.85em;
+  color: #9ca3af;
+  margin: 0 0 10px;
+`
+
+const MobileActionBtn = styled.button`
+  width: 100%;
+  padding: 13px;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+  &:hover { background: #f0f0f0; }
+`
+
+const MobileLogoutBtn = styled.button`
+  width: 100%;
+  padding: 13px;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover { background: #ffe4e6; }
+`
+
+const MobileLoginBtn = styled(NavLink)`
+  display: block;
+  margin: 10px 24px 4px;
+  padding: 14px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1em;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  &:hover { opacity: 0.9; }
+`
+
+// ════════════════════════════════════════════════════════════
+export default function Header() {
+  const { isLoggedIn, logout, user } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState<SignUpForm>({
-    userId: '',
-    name: '',
-    age: '',
-    gender: '',
-    phone: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  })
-  
-  // 유효성 검사 상태
-  const [phoneError, setPhoneError] = useState<string>('')
-  const [userIdError, setUserIdError] = useState<string>('') // 🆕 아이디 에러
-  const [passwordError, setPasswordError] = useState<string>('') // 🆕 비밀번호 에러
-  
-  // 아이디 중복 확인 상태
-  const [isIdChecked, setIsIdChecked] = useState<boolean>(false)
-  const [isIdValid, setIsIdValid] = useState<boolean>(false)
-  const [idCheckMessage, setIdCheckMessage] = useState<string>('')
-  
-  // 로딩 상태
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [isCheckingId, setIsCheckingId] = useState<boolean>(false)
+  const location = useLocation()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // 🆕 아이디 유효성 검사 함수
-  const validateUserId = (userId: string) => {
-    if (!userId) {
-      setUserIdError('')
-      return false
-    }
-    
-    // 5~20자의 영문 소문자, 숫자와 특수기호 -, _ 만 사용 가능
-    const userIdRegex = /^[a-z0-9_-]{5,20}$/
-    
-    if (userId.length < 5) {
-      setUserIdError('아이디는 최소 5자 이상이어야 합니다.')
-      return false
-    }
-    
-    if (userId.length > 20) {
-      setUserIdError('아이디는 최대 20자까지 가능합니다.')
-      return false
-    }
-    
-    if (!userIdRegex.test(userId)) {
-      setUserIdError('영문 소문자, 숫자, -, _ 만 사용 가능합니다.')
-      return false
-    }
-    
-    setUserIdError('')
-    return true
-  }
+  useEffect(() => {
+    setMobileOpen(false)
+    setDropdownOpen(false)
+  }, [location.pathname])
 
-  // 🆕 비밀번호 유효성 검사 함수
-  const validatePassword = (password: string) => {
-    if (!password) {
-      setPasswordError('')
-      return false
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
     }
-    
-    // 8~16자 영문 대/소문자, 숫자, 특수문자
-    const lengthValid = password.length >= 8 && password.length <= 16
-    
-    if (!lengthValid) {
-      setPasswordError('비밀번호는 8~16자여야 합니다.')
-      return false
-    }
-    
-    // 사용 가능한 특수문자: ! " # $ % & ' ( ) * + , - . / : ; ? @ [ \ ] ^ _ ` { | } ~
-    const allowedCharsRegex = /^[A-Za-z0-9!"#$%&'()*+,\-./:;?@[\\\]^_`{|}~]+$/
-    
-    if (!allowedCharsRegex.test(password)) {
-      setPasswordError('허용되지 않은 문자가 포함되어 있습니다.')
-      return false
-    }
-    
-    // 영문, 숫자, 특수문자 포함 여부 확인
-    const hasLetter = /[A-Za-z]/.test(password)
-    const hasNumber = /[0-9]/.test(password)
-    const hasSpecial = /[!"#$%&'()*+,\-./:;?@[\\\]^_`{|}~]/.test(password)
-    
-    const combinationCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length
-    
-    if (combinationCount < 2) {
-      setPasswordError('영문, 숫자, 특수문자 중 2가지 이상 조합해야 합니다.')
-      return false
-    }
-    
-    setPasswordError('')
-    return true
-  }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
-    
-    // 아이디 변경 시 중복확인 상태 초기화 및 유효성 검사
-    if (name === 'userId') {
-      setIsIdChecked(false)
-      setIsIdValid(false)
-      setIdCheckMessage('')
-      validateUserId(value) // 🆕 실시간 유효성 검사
-    }
-    
-    // 🆕 비밀번호 변경 시 유효성 검사
-    if (name === 'password') {
-      validatePassword(value)
-    }
-    
-    // 전화번호 형식 검증
-    if (name === 'phone') {
-      validatePhoneNumber(value)
-    }
-  }
-
-  // 전화번호 형식 검증 함수
-  const validatePhoneNumber = (phone: string) => {
-    // 하이픈 제거 후 검사
-    const cleanPhone = phone.replace(/-/g, '')
-    
-    // 빈 값이면 오류 메시지 없음
-    if (!cleanPhone) {
-      setPhoneError('')
-      return
-    }
-    
-    // 010으로 시작하는 11자리 숫자인지 확인
-    const phoneRegex = /^010\d{8}$/
-    if (!phoneRegex.test(cleanPhone)) {
-      setPhoneError('010으로 시작하는 11자리 숫자를 입력해주세요')
+  const handleNavigation = (path: string) => {
+    if (location.pathname === path) {
+      window.location.reload()
     } else {
-      setPhoneError('')
+      navigate(path)
     }
+    setMobileOpen(false)
   }
 
-  const handleGenderChange = (e: SelectChangeEvent<string>) => {
-    setForm(prev => ({ ...prev, gender: e.target.value }))
+  const handleLogout = () => {
+    logout()
+    setDropdownOpen(false)
+    setMobileOpen(false)
+    navigate('/')
   }
 
-  const handleIdCheck = async () => {
-    // 🆕 아이디 유효성 검사 먼저 수행
-    if (!form.userId.trim()) {
-      setIdCheckMessage('아이디를 입력해주세요.')
-      setIsIdChecked(true)
-      setIsIdValid(false)
-      return
-    }
-    
-    if (!validateUserId(form.userId)) {
-      setIdCheckMessage('아이디 형식이 올바르지 않습니다.')
-      setIsIdChecked(true)
-      setIsIdValid(false)
-      return
-    }
-
-    setIsCheckingId(true)
-    
-    try {
-      const { data } = await userAPI.checkUserid(form.userId)
-      setIdCheckMessage('사용 가능한 아이디입니다.')
-      setIsIdChecked(true)
-      setIsIdValid(true)
-    } catch (err: any) {
-      if (err.response?.data?.message) {
-        setIdCheckMessage(err.response.data.message)
-      } else {
-        setIdCheckMessage('중복 확인 중 오류가 발생했습니다.')
-      }
-      setIsIdChecked(true)
-      setIsIdValid(false)
-      console.error('ID 중복 확인 오류:', err)
-    } finally {
-      setIsCheckingId(false)
-    }
+  const handleMypage = () => {
+    setDropdownOpen(false)
+    setMobileOpen(false)
+    navigate('/mypage')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (isSubmitting) {
-      return
-    }
-    
-    // 🆕 아이디 유효성 검사
-    if (!validateUserId(form.userId)) {
-      alert('아이디 형식이 올바르지 않습니다.')
-      return
-    }
-    
-    // 아이디 중복확인 여부 검증
-    if (!isIdChecked || !isIdValid) {
-      alert('아이디 중복 확인이 필요합니다.')
-      return
-    }
-    
-    // 🆕 비밀번호 유효성 검사
-    if (!validatePassword(form.password)) {
-      alert('비밀번호 형식이 올바르지 않습니다.')
-      return
-    }
-    
-    // 필수 필드 검증
-    if (!form.userId.trim() || !form.name.trim() || !form.age || !form.gender || !form.phone.trim() || !form.password.trim()) {
-      alert('필수 항목을 모두 입력해주세요.')
-      return
-    }
-    
-    // 비밀번호 일치 검증
-    if (form.password !== form.confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.')
-      return
-    }
-    
-    // 전화번호 형식 검증
-    const cleanPhone = form.phone.replace(/-/g, '')
-    const phoneRegex = /^010\d{8}$/
-    if (!phoneRegex.test(cleanPhone)) {
-      alert('올바른 전화번호 형식이 아닙니다. 010으로 시작하는 11자리 숫자를 입력해주세요.')
-      return
-    }
-    
-    setIsSubmitting(true)
-    
-    try {
-      await userAPI.register({
-        userid: form.userId,
-        name: form.name,
-        age: Number(form.age),
-        gender: form.gender,
-        phone: cleanPhone,
-        email: form.email || undefined,
-        password: form.password
-      })
-      alert('회원가입이 완료되었습니다.')
-      navigate('/login')
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message
-      const statusCode = err.response?.status
-      
-      if (statusCode === 429) {
-        if (errorMessage.includes('동시')) {
-          alert('회원가입 처리 중입니다. 잠시 후 다시 시도해주세요.')
-        } else {
-          alert('너무 많은 회원가입 시도가 있었습니다. 15분 후에 다시 시도해주세요.')
-        }
-      } else if (statusCode === 409) {
-        if (errorMessage.includes('전화번호')) {
-          alert('이미 등록된 전화번호입니다.')
-        } else if (errorMessage.includes('이름')) {
-          alert('이미 등록된 이름입니다.')
-        } else if (errorMessage.includes('아이디')) {
-          alert('이미 등록된 아이디입니다.')
-          setIsIdChecked(false)
-          setIsIdValid(false)
-          setIdCheckMessage('')
-        } else {
-          alert(errorMessage)
-        }
-      } else if (errorMessage.includes('이미 등록된 전화번호')) {
-        alert('이미 등록된 전화번호입니다.')
-      } else if (errorMessage.includes('이미 등록된 이름')) {
-        alert('이미 등록된 이름입니다.')
-      } else {
-        alert(errorMessage)
-      }
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const isActive = (path: string) => location.pathname === path
 
-  // 전화번호 자동 하이픈 추가 함수
-  const formatPhoneNumber = (value: string) => {
-    const numbers = value.replace(/[^\d]/g, '')
-    if (numbers.length <= 3) return numbers
-    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`
-    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`
-  }
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedNumber = formatPhoneNumber(e.target.value)
-    setForm(prev => ({ ...prev, phone: formattedNumber }))
-    validatePhoneNumber(formattedNumber)
-  }
+  const navItems = [
+    { label: '홈', path: '/' },
+    { label: '실습하기', path: '/upload' },
+    { label: '문제 풀기', path: '/solve-questions' },
+  ]
 
   return (
     <>
-      <Header />
-      <Container 
-        maxWidth="sm"
-        sx={{ mt: 5 }}
-      >
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: 3,
-            p: 4,
-          }}
-        >
-          <Typography variant="h2" align="center" gutterBottom>
-            회원가입
-          </Typography>
+      <NoScroll $lock={mobileOpen} />
 
-          <Stack spacing={3}>
-            {/* 1행: 아이디 + 중복확인 */}
-            <Box>
-              <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                <TextField
-                  fullWidth
-                  required
-                  name="userId"
-                  label="아이디"
-                  placeholder="5~20자 영문 소문자, 숫자, -, _"
-                  value={form.userId}
-                  onChange={handleChange}
-                  sx={{ flex: 1 }}
-                  error={(isIdChecked && !isIdValid) || !!userIdError}
-                  helperText={userIdError || "5~20자의 영문 소문자, 숫자, -, _ 만 사용 가능"}
-                  disabled={isSubmitting}
-                />
-                <Button
-                  variant="outlined"
-                  onClick={handleIdCheck}
-                  sx={{ width: 120 }}
-                  disabled={isCheckingId || isSubmitting || !!userIdError}
-                >
-                  {isCheckingId ? <CircularProgress size={20} /> : '중복 확인'}
-                </Button>
-              </Stack>
-              {isIdChecked && (
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  ml: 1, 
-                  mt: 0.5,
-                  color: isIdValid ? 'success.main' : 'error.main'
-                }}>
-                  {isIdValid ? <CheckCircleIcon fontSize="small" sx={{ mr: 0.5 }} /> : <ErrorIcon fontSize="small" sx={{ mr: 0.5 }} />}
-                  <Typography variant="caption">{idCheckMessage}</Typography>
-                </Box>
-              )}
-            </Box>
+      <HeaderShell>
+        <LogoLink to="/" className="main-link" onClick={(e) => { e.preventDefault(); handleNavigation('/') }}>
+          <Logo src={LogoImage} alt="큐레카 로고" />
+        </LogoLink>
 
-            {/* 2행: 이름 + 나이 */}
-            <Stack direction="row" spacing={2}>
-              <TextField
-                fullWidth
-                required
-                name="name"
-                label="이름"
-                placeholder="이름 입력"
-                value={form.name}
-                onChange={handleChange}
-                sx={{ flex: 1 }}
-                disabled={isSubmitting}
-              />
-              <TextField
-                fullWidth
-                required
-                name="age"
-                label="나이"
-                type="number"
-                placeholder="나이 입력"
-                value={form.age}
-                onChange={handleChange}
-                sx={{ flex: 1 }}
-                disabled={isSubmitting}
-              />
-            </Stack>
-
-            {/* 3행: 성별 + 전화번호 */}
-            <Stack direction="row" spacing={2}>
-              <FormControl fullWidth required sx={{ flex: 1 }}>
-                <InputLabel>성별</InputLabel>
-                <Select
-                  name="gender"
-                  label="성별"
-                  value={form.gender}
-                  onChange={handleGenderChange}
-                  disabled={isSubmitting}
-                >
-                  <MenuItem value="">
-                    <em>선택하세요</em>
-                  </MenuItem>
-                  <MenuItem value="male">남성</MenuItem>
-                  <MenuItem value="female">여성</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                fullWidth
-                required
-                name="phone"
-                label="전화번호"
-                placeholder="01012345678"
-                value={form.phone}
-                onChange={handlePhoneChange}
-                error={!!phoneError}
-                helperText={phoneError || "010으로 시작하는 11자리 숫자"}
-                sx={{ flex: 1 }}
-                inputProps={{
-                  maxLength: 13 // 하이픈 포함 최대 길이
-                }}
-                disabled={isSubmitting}
-              />
-            </Stack>
-
-            {/* 4행: 이메일 */}
-            <TextField
-              fullWidth
-              name="email"
-              label="이메일"
-              type="email"
-              placeholder="이메일 입력 (선택사항)"
-              value={form.email}
-              onChange={handleChange}
-              disabled={isSubmitting}
-            />
-
-            {/* 5행: 비밀번호 */}
-            <TextField
-              fullWidth
-              required
-              name="password"
-              label="비밀번호"
-              type="password"
-              placeholder="8~16자 영문, 숫자, 특수문자 조합"
-              value={form.password}
-              onChange={handleChange}
-              error={!!passwordError}
-              helperText={passwordError || "8~16자 영문, 숫자, 특수문자 중 2가지 이상 조합"}
-              disabled={isSubmitting}
-            />
-
-            {/* 6행: 비밀번호 확인 */}
-            <TextField
-              fullWidth
-              required
-              name="confirmPassword"
-              label="비밀번호 확인"
-              type="password"
-              placeholder="비밀번호 재입력"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              error={form.confirmPassword !== '' && form.password !== form.confirmPassword}
-              helperText={
-                form.confirmPassword !== '' && form.password !== form.confirmPassword
-                  ? "비밀번호가 일치하지 않습니다"
-                  : ""
-              }
-              disabled={isSubmitting}
-            />
-
-            {/* 회원가입 버튼 */}
-            <Box display="flex" justifyContent="center" mt={2}>
-              <Button 
-                variant="contained" 
-                type="submit" 
-                sx={{ width: 200, height: 48 }}
-                disabled={!!phoneError || !!userIdError || !!passwordError || !isIdValid || !isIdChecked || isSubmitting}
+        {/* 데스크톱 메뉴 */}
+        <DesktopNav>
+          {navItems.map(item => (
+            <li key={item.path}>
+              <NavLink
+                to={item.path}
+                className={isActive(item.path) ? 'active' : ''}
+                onClick={(e) => { e.preventDefault(); handleNavigation(item.path) }}
+                data-navigation="true"
               >
-                {isSubmitting ? <CircularProgress size={24} color="inherit" /> : '회원가입'}
-              </Button>
-            </Box>
-          </Stack>
-        </Box>
-      </Container>
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
+          <li>
+            {isLoggedIn ? (
+              <UserBadgeWrap ref={dropdownRef}>
+                <UserBadge onClick={() => setDropdownOpen(v => !v)}>
+                  {user?.name || '사용자'}님 ▾
+                </UserBadge>
+                {dropdownOpen && (
+                  <Dropdown>
+                    <DropdownBtn onClick={handleMypage}>마이페이지</DropdownBtn>
+                    <DropdownBtn $danger onClick={handleLogout}>로그아웃</DropdownBtn>
+                  </Dropdown>
+                )}
+              </UserBadgeWrap>
+            ) : (
+              <LoginNavLink
+                to="/login"
+                className={isActive('/login') ? 'active' : ''}
+                onClick={(e) => { e.preventDefault(); handleNavigation('/login') }}
+              >
+                로그인
+              </LoginNavLink>
+            )}
+          </li>
+        </DesktopNav>
+
+        {/* 모바일 햄버거 */}
+        <HamburgerBtn
+          $open={mobileOpen}
+          onClick={() => setMobileOpen(v => !v)}
+          aria-label="메뉴 열기/닫기"
+        >
+          <span />
+          <span />
+          <span />
+        </HamburgerBtn>
+      </HeaderShell>
+
+      <MobileOverlay $open={mobileOpen} onClick={() => setMobileOpen(false)} />
+
+      <MobileMenu $open={mobileOpen}>
+        {navItems.map(item => (
+          <MobileNavItem
+            key={item.path}
+            to={item.path}
+            className={isActive(item.path) ? 'active' : ''}
+            onClick={(e) => { e.preventDefault(); handleNavigation(item.path) }}
+            data-navigation="true"
+          >
+            {item.label}
+          </MobileNavItem>
+        ))}
+
+        {isLoggedIn ? (
+          <MobileUserSection>
+            <MobileUserLabel>{user?.name || '사용자'}님으로 로그인 중</MobileUserLabel>
+            <MobileActionBtn onClick={handleMypage}>마이페이지</MobileActionBtn>
+            <MobileLogoutBtn onClick={handleLogout}>로그아웃</MobileLogoutBtn>
+          </MobileUserSection>
+        ) : (
+          <MobileLoginBtn
+            to="/login"
+            onClick={(e) => { e.preventDefault(); handleNavigation('/login') }}
+          >
+            로그인
+          </MobileLoginBtn>
+        )}
+      </MobileMenu>
     </>
   )
 }

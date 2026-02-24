@@ -154,7 +154,7 @@ const preprocessQuestion = (question: any, type: string): void => {
       } else if (typeof question.answer_keywords === "string") {
         question.answer_keywords = question.answer_keywords
           .split(",")
-          .map((k) => k.trim());
+          .map((k: string) => k.trim());
       }
       question.model_answer = question.model_answer || "";
       break;
@@ -225,7 +225,7 @@ const compareAnswers = {
       return false;
 
     const lowerUserAnswer = userAnswer.toLowerCase();
-    const keywordMatches = question.answer_keywords.filter((keyword) =>
+    const keywordMatches = question.answer_keywords.filter((keyword: string) =>
       lowerUserAnswer.includes(keyword.toLowerCase())
     ).length;
 
@@ -711,9 +711,9 @@ export default function QuestionSolver({
 
     // 🔄 currentQuestionItem 사용
     if (
-      currentQuestionItem.displayType.includes("서술") ||
+      (currentQuestionItem.displayType ?? '').includes("서술") ||
       currentQuestionItem.name.includes("서술") ||
-      currentQuestionItem.displayType.toLowerCase().includes("descriptive")
+      (currentQuestionItem.displayType ?? '').toLowerCase().includes("descriptive")
     ) {
       return (
         <DescriptiveQuestion
@@ -1191,12 +1191,13 @@ export default function QuestionSolver({
   };
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={onClose}>
-          목록으로 돌아가기
+    <Box sx={{ mt: { xs: 2, sm: 4 } }}>
+      {/* 모바일: 헤더 행 wrap */}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2, flexWrap: 'wrap', gap: 1 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
+          목록으로
         </Button>
-        <Typography variant="h4" sx={{ ml: 2, flexGrow: 1 }}>
+        <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
           {retryMode ? "틀린 문제 재도전" : "문제 풀기"}
         </Typography>
         <Tooltip
@@ -1205,18 +1206,18 @@ export default function QuestionSolver({
           <IconButton
             onClick={handleFavoriteToggle}
             disabled={favoriteLoading}
-            sx={{ mr: 2 }}
+            size="small"
           >
             {favoriteLoading ? (
-              <CircularProgress size={24} />
+              <CircularProgress size={20} />
             ) : isFavorite ? (
-              <StarIcon sx={{ color: "#FFD700", fontSize: 32 }} />
+              <StarIcon sx={{ color: "#FFD700", fontSize: 26 }} />
             ) : (
-              <StarBorderIcon sx={{ fontSize: 32 }} />
+              <StarBorderIcon sx={{ fontSize: 26 }} />
             )}
           </IconButton>
         </Tooltip>
-        <Typography variant="subtitle1" color="text.secondary">
+        <Typography variant="caption" color="text.secondary">
           {retryMode && isFavoriteMode && wrongQuestionIndices.length > 0
             ? `${wrongQuestionIndices.indexOf(currentFavoriteIndex) + 1} / ${
                 wrongQuestionIndices.length
@@ -1235,7 +1236,7 @@ export default function QuestionSolver({
         </Typography>
       </Box>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, mb: 3, borderRadius: 2 }}>
         <Typography variant="subtitle1" color="text.secondary" gutterBottom>
           파일명: {currentQuestionItem.name}
         </Typography>
@@ -1313,15 +1314,17 @@ export default function QuestionSolver({
           </Box>
         )}
 
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between" }}>
+        <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", gap: 1 }}>
           <Button
             variant="outlined"
+            size="small"
             onClick={handlePrevQuestion}
             disabled={
               isFavoriteMode
                 ? currentFavoriteIndex === 0
                 : currentQuestionIndex === 0
             }
+            sx={{ px: { xs: 2, sm: 3 } }}
           >
             이전 문제
           </Button>
@@ -1330,8 +1333,10 @@ export default function QuestionSolver({
             <Button
               variant="contained"
               color="primary"
+              size="small"
               onClick={handleCheckResult}
               disabled={isCheckButtonDisabled}
+              sx={{ px: { xs: 2, sm: 3 } }}
             >
               정답 확인
             </Button>
@@ -1339,9 +1344,11 @@ export default function QuestionSolver({
             <Button
               variant="contained"
               color={isLastQuestion ? "success" : "primary"}
+              size="small"
               onClick={
                 isLastQuestion ? () => setShowSummary(true) : handleNextQuestion
               }
+              sx={{ px: { xs: 2, sm: 3 } }}
             >
               {isLastQuestion ? "결과 보기" : "다음 문제"}
             </Button>
@@ -1359,6 +1366,7 @@ export default function QuestionSolver({
           sx: {
             borderRadius: 3,
             padding: 2,
+            m: { xs: 2, sm: 'auto' },
           },
         }}
       >
