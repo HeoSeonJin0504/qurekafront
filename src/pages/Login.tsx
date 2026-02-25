@@ -11,7 +11,9 @@ import {
   Alert,
   Box,
   Typography,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { Visibility, VisibilityOff, Home, Google } from '@mui/icons-material'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
@@ -29,16 +31,15 @@ export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
   const handleClickShowPassword = () => setShowPassword(prev => !prev)
 
   const handleLogin = async () => {
-    if (isLoading) {
-      return;
-    }
-
+    if (isLoading) return
     setError(null)
     setIsLoading(true)
-
     try {
       const res = await userAPI.login(userid, password, rememberMe)
       if (res.data.success) {
@@ -51,7 +52,6 @@ export default function Login() {
       console.error(err)
       const statusCode = err.response?.status
       const errorMessage = err.response?.data?.message || '서버 오류로 로그인할 수 없습니다.'
-
       if (statusCode === 429) {
         setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
       } else {
@@ -62,30 +62,49 @@ export default function Login() {
     }
   }
 
+  // 엔터 키 로그인
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleLogin()
+  }
+
   return (
     <>
       <Header />
       <Container
         maxWidth="sm"
-        sx={{ mt: 8 }}
+        sx={{
+          mt: isMobile ? 4 : 8,
+          px: isMobile ? 2 : 3,
+          // 모바일: 화면 전체 높이 채우기
+          minHeight: isMobile ? 'calc(100vh - 60px)' : 'auto',
+          display: isMobile ? 'flex' : 'block',
+          flexDirection: 'column',
+          justifyContent: isMobile ? 'center' : 'flex-start',
+        }}
       >
         <Box
           component="form"
           noValidate
           autoComplete="off"
+          onKeyDown={handleKeyDown}
           sx={{
             bgcolor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: 3,
-            p: 4,
+            borderRadius: isMobile ? 3 : 2,
+            boxShadow: isMobile ? 2 : 3,
+            p: isMobile ? 3 : 4,
           }}
         >
-          <Typography variant="h5" align="center" fontWeight={600} mb={3}>
+          <Typography
+            variant={isMobile ? 'h6' : 'h5'}
+            align="center"
+            fontWeight={700}
+            mb={isMobile ? 2 : 3}
+          >
             어서오세요!
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, fontSize: isMobile ? '0.85rem' : '1rem' }}>
               {error}
             </Alert>
           )}
@@ -98,8 +117,10 @@ export default function Login() {
               variant="outlined"
               value={userid}
               onChange={e => setUserid(e.target.value)}
-              autoComplete="off"
+              autoComplete="username"
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
+              inputProps={{ style: { fontSize: isMobile ? '1rem' : undefined } }}
             />
             <TextField
               fullWidth
@@ -109,12 +130,19 @@ export default function Login() {
               variant="outlined"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              autoComplete="off"
+              autoComplete="current-password"
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
+              inputProps={{ style: { fontSize: isMobile ? '1rem' : undefined } }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={handleClickShowPassword} edge="end" disabled={isLoading}>
+                    <IconButton
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                      disabled={isLoading}
+                      size={isMobile ? 'small' : 'medium'}
+                    >
                       {showPassword ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
@@ -122,18 +150,38 @@ export default function Login() {
               }}
             />
 
-            <Box display="flex" justifyContent="space-between" alignItems="center" mt={1} mb={2}>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mt={1}
+              mb={isMobile ? 1.5 : 2}
+              flexWrap="wrap"
+              gap={0.5}
+            >
               <FormControlLabel
                 control={
                   <Checkbox
                     checked={rememberMe}
                     onChange={e => setRememberMe(e.target.checked)}
                     disabled={isLoading}
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 }
-                label="로그인 정보 기억"
+                label={
+                  <Typography variant={isMobile ? 'body2' : 'body1'}>
+                    로그인 정보 기억
+                  </Typography>
+                }
               />
-              <RouterLink to="#" style={{ textDecoration: 'none' }}>
+              <RouterLink
+                to="#"
+                style={{
+                  textDecoration: 'none',
+                  fontSize: isMobile ? '0.8rem' : '0.875rem',
+                  color: '#1976d2',
+                }}
+              >
                 비밀번호 찾기
               </RouterLink>
             </Box>
@@ -143,7 +191,12 @@ export default function Login() {
               variant="contained"
               color="primary"
               fullWidth
-              sx={{ mb: 2 }}
+              sx={{
+                mb: isMobile ? 1.5 : 2,
+                py: isMobile ? 1.2 : undefined,
+                fontSize: isMobile ? '1rem' : undefined,
+                borderRadius: isMobile ? 2 : undefined,
+              }}
               onClick={handleLogin}
               disabled={isLoading}
             >
@@ -151,17 +204,34 @@ export default function Login() {
             </Button>
 
             <Box display="flex" justifyContent="center" gap={2} mt={1}>
-              <IconButton>
-                <Google />
+              <IconButton size={isMobile ? 'medium' : 'large'}>
+                <Google fontSize={isMobile ? 'medium' : 'large'} />
               </IconButton>
-              <IconButton component={RouterLink} to="/">
-                <Home />
+              <IconButton
+                component={RouterLink}
+                to="/"
+                size={isMobile ? 'medium' : 'large'}
+              >
+                <Home fontSize={isMobile ? 'medium' : 'large'} />
               </IconButton>
             </Box>
 
-            <Typography variant="body2" color="text.secondary" mt={3} textAlign="center">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              mt={isMobile ? 2 : 3}
+              textAlign="center"
+              fontSize={isMobile ? '0.82rem' : undefined}
+            >
               계정이 없으신가요?{' '}
-              <RouterLink to="/signup" style={{ fontWeight: 'bold', textDecoration: 'underline' }}>
+              <RouterLink
+                to="/signup"
+                style={{
+                  fontWeight: 'bold',
+                  textDecoration: 'underline',
+                  color: '#1976d2',
+                }}
+              >
                 회원가입
               </RouterLink>
             </Typography>
