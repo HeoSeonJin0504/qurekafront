@@ -15,7 +15,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { Visibility, VisibilityOff, Home, Google } from '@mui/icons-material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
@@ -202,19 +202,6 @@ export default function Login() {
             >
               {isLoading ? <CircularProgress size={24} color="inherit" /> : '로그인'}
             </Button>
-
-            <Box display="flex" justifyContent="center" gap={2} mt={1}>
-              <IconButton size={isMobile ? 'medium' : 'large'}>
-                <Google fontSize={isMobile ? 'medium' : 'large'} />
-              </IconButton>
-              <IconButton
-                component={RouterLink}
-                to="/"
-                size={isMobile ? 'medium' : 'large'}
-              >
-                <Home fontSize={isMobile ? 'medium' : 'large'} />
-              </IconButton>
-            </Box>
 
             <Typography
               variant="body2"
