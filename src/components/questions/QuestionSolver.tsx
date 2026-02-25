@@ -226,7 +226,7 @@ const compareAnswers = {
 
     const lowerUserAnswer = userAnswer.toLowerCase();
     const keywordMatches = question.answer_keywords.filter((keyword: string) =>
-      lowerUserAnswer.includes(keyword.toLowerCase())
+      lowerUserAnswer.includes(keyword.toLowerCase()),
     ).length;
 
     return keywordMatches >= Math.ceil(question.answer_keywords.length / 2);
@@ -241,7 +241,7 @@ export default function QuestionSolver({
   const { user } = useAuth();
   const [parsedData, setParsedData] = useState<ParsedQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
-    questionItem.questionIndex || 0
+    questionItem.questionIndex || 0,
   );
   const [userAnswers, setUserAnswers] = useState<any[]>([]);
   const [showResult, setShowResult] = useState(false);
@@ -260,7 +260,7 @@ export default function QuestionSolver({
   const [showSummary, setShowSummary] = useState(false);
   const [retryMode, setRetryMode] = useState(false);
   const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>(
-    []
+    [],
   );
 
   // 🆕 즐겨찾기 변경 추적
@@ -278,7 +278,7 @@ export default function QuestionSolver({
       (item) =>
         item.id === questionItem.id &&
         (item.questionIndex === questionItem.questionIndex ||
-          (!item.questionIndex && !questionItem.questionIndex))
+          (!item.questionIndex && !questionItem.questionIndex)),
     );
   });
 
@@ -306,7 +306,7 @@ export default function QuestionSolver({
             rawData.questions[0].type ||
             detectQuestionType(
               rawData.questions[0],
-              currentQuestionItem.displayType
+              currentQuestionItem.displayType,
             );
         }
       } else {
@@ -318,7 +318,7 @@ export default function QuestionSolver({
 
       parsedQuestion.type = parsedQuestion.type.toLowerCase();
       parsedQuestion.questions.forEach((q) =>
-        preprocessQuestion(q, parsedQuestion.type)
+        preprocessQuestion(q, parsedQuestion.type),
       );
 
       setParsedData(parsedQuestion);
@@ -331,7 +331,7 @@ export default function QuestionSolver({
 
   const currentQuestion = useMemo(
     () => parsedData?.questions[currentQuestionIndex],
-    [parsedData, currentQuestionIndex]
+    [parsedData, currentQuestionIndex],
   );
 
   const handleAnswer = useCallback(
@@ -342,7 +342,7 @@ export default function QuestionSolver({
         return newAnswers;
       });
     },
-    [currentQuestionIndex]
+    [currentQuestionIndex],
   );
 
   // 🔄 정답 확인 로직을 별도 함수로 분리
@@ -358,7 +358,7 @@ export default function QuestionSolver({
         case "multiple_choice":
           return compareAnswers.multiple_choice(
             userAnswer,
-            question.correct_answer
+            question.correct_answer,
           );
 
         case "true_false":
@@ -380,7 +380,7 @@ export default function QuestionSolver({
           return false;
       }
     },
-    [parsedData, userAnswers]
+    [parsedData, userAnswers],
   );
 
   const handleCheckResult = useCallback(() => {
@@ -402,7 +402,7 @@ export default function QuestionSolver({
       const existingIndex = newResults.findIndex(
         (r) =>
           r.questionIndex ===
-          (isFavoriteMode ? currentFavoriteIndex : currentQuestionIndex)
+          (isFavoriteMode ? currentFavoriteIndex : currentQuestionIndex),
       );
       if (existingIndex >= 0) {
         newResults[existingIndex] = result;
@@ -424,7 +424,7 @@ export default function QuestionSolver({
       // 🔄 재도전 모드일 때
       if (retryMode && wrongQuestionIndices.length > 0) {
         const currentWrongIndex = wrongQuestionIndices.findIndex(
-          (i) => i === currentFavoriteIndex
+          (i) => i === currentFavoriteIndex,
         );
 
         if (currentWrongIndex < wrongQuestionIndices.length - 1) {
@@ -446,7 +446,7 @@ export default function QuestionSolver({
                   rawData.questions[0].type ||
                   detectQuestionType(
                     rawData.questions[0],
-                    nextFavorite.displayType
+                    nextFavorite.displayType,
                   );
               }
             } else {
@@ -458,7 +458,7 @@ export default function QuestionSolver({
 
             parsedQuestion.type = parsedQuestion.type.toLowerCase();
             parsedQuestion.questions.forEach((q) =>
-              preprocessQuestion(q, parsedQuestion.type)
+              preprocessQuestion(q, parsedQuestion.type),
             );
 
             setCurrentQuestionItem(nextFavorite);
@@ -494,7 +494,7 @@ export default function QuestionSolver({
                   rawData.questions[0].type ||
                   detectQuestionType(
                     rawData.questions[0],
-                    nextFavorite.displayType
+                    nextFavorite.displayType,
                   );
               }
             } else {
@@ -506,7 +506,7 @@ export default function QuestionSolver({
 
             parsedQuestion.type = parsedQuestion.type.toLowerCase();
             parsedQuestion.questions.forEach((q) =>
-              preprocessQuestion(q, parsedQuestion.type)
+              preprocessQuestion(q, parsedQuestion.type),
             );
 
             setCurrentQuestionItem(nextFavorite);
@@ -532,7 +532,7 @@ export default function QuestionSolver({
 
       if (retryMode) {
         const currentWrongIndex = wrongQuestionIndices.findIndex(
-          (i) => i === currentQuestionIndex
+          (i) => i === currentQuestionIndex,
         );
         if (currentWrongIndex < wrongQuestionIndices.length - 1) {
           setCurrentQuestionIndex(nextIndex);
@@ -585,7 +585,7 @@ export default function QuestionSolver({
                 rawData.questions[0].type ||
                 detectQuestionType(
                   rawData.questions[0],
-                  prevFavorite.displayType
+                  prevFavorite.displayType,
                 );
             }
           } else {
@@ -597,7 +597,7 @@ export default function QuestionSolver({
 
           parsedQuestion.type = parsedQuestion.type.toLowerCase();
           parsedQuestion.questions.forEach((q) =>
-            preprocessQuestion(q, parsedQuestion.type)
+            preprocessQuestion(q, parsedQuestion.type),
           );
 
           // 🔄 상태 업데이트 순서 개선
@@ -711,9 +711,11 @@ export default function QuestionSolver({
 
     // 🔄 currentQuestionItem 사용
     if (
-      (currentQuestionItem.displayType ?? '').includes("서술") ||
+      (currentQuestionItem.displayType ?? "").includes("서술") ||
       currentQuestionItem.name.includes("서술") ||
-      (currentQuestionItem.displayType ?? '').toLowerCase().includes("descriptive")
+      (currentQuestionItem.displayType ?? "")
+        .toLowerCase()
+        .includes("descriptive")
     ) {
       return (
         <DescriptiveQuestion
@@ -750,9 +752,9 @@ export default function QuestionSolver({
           const response = await favoriteAPI.checkQuestion(
             user.id,
             currentQuestionItem.id,
-            currentQuestionIndex
+            currentQuestionIndex,
           );
-          
+
           const key = `${currentQuestionItem.id}-${currentQuestionIndex}`;
           setFavoriteStatusMap((prev) => {
             const newMap = new Map(prev);
@@ -763,20 +765,21 @@ export default function QuestionSolver({
             return newMap;
           });
         } else {
-          // 일반 모드 - 현재 문제 세트의 모든 문제에 대해 즐겨찾기 상태 확인
           const questions = parsedData.questions.map((_, index) => ({
             questionId: currentQuestionItem.id,
             questionIndex: index,
           }));
 
+          if (questions.length === 0) return;
+
           const response = await favoriteAPI.checkMultipleQuestions(
             user.id,
-            questions
+            questions,
           );
 
           // Map으로 변환하여 저장
           const statusMap = new Map();
-          response.data.statuss.forEach((status: any) => {
+          response.data.statuses.forEach((status: any) => {
             const key = `${status.questionId}-${status.questionIndex}`;
             statusMap.set(key, {
               isFavorite: status.isFavorite,
@@ -788,11 +791,19 @@ export default function QuestionSolver({
         }
       } catch (error) {
         console.error("즐겨찾기 상태 조회 오류:", error);
+      } finally {
+        setFavoriteLoading(false);
       }
     };
 
     loadFavoriteStatuses();
-  }, [user?.id, parsedData, currentQuestionItem.id, currentQuestionIndex, isFavoriteMode]);
+  }, [
+    user?.id,
+    parsedData,
+    currentQuestionItem.id,
+    currentQuestionIndex,
+    isFavoriteMode,
+  ]);
 
   // 🔄 즐겨찾기 모드에서 문제 변경 시 즐겨찾기 상태 업데이트
   useEffect(() => {
@@ -803,7 +814,7 @@ export default function QuestionSolver({
         const response = await favoriteAPI.checkQuestion(
           user.id,
           currentQuestionItem.id,
-          currentQuestionIndex
+          currentQuestionIndex,
         );
 
         const key = `${currentQuestionItem.id}-${currentQuestionIndex}`;
@@ -862,7 +873,7 @@ export default function QuestionSolver({
         console.error("즐겨찾기 처리 오류:", error);
         alert(
           error.response?.data?.message ||
-            "즐겨찾기 처리 중 오류가 발생했습니다."
+            "즐겨찾기 처리 중 오류가 발생했습니다.",
         );
       } finally {
         setFavoriteLoading(false);
@@ -904,7 +915,8 @@ export default function QuestionSolver({
     } catch (error: any) {
       console.error("즐겨찾기 처리 오류:", error);
       alert(
-        error.response?.data?.message || "즐겨찾기 처리 중 오류가 발생했습니다."
+        error.response?.data?.message ||
+          "즐겨찾기 처리 중 오류가 발생했습니다.",
       );
     } finally {
       setFavoriteLoading(false);
@@ -928,7 +940,7 @@ export default function QuestionSolver({
           setFolders(sortedFolders);
           // 기본 폴더를 초기값으로 설정
           const defaultFolder = sortedFolders.find(
-            (f) => f.folder_name === "기본 폴더"
+            (f) => f.folder_name === "기본 폴더",
           );
           if (defaultFolder) {
             setSelectedFolderId(defaultFolder.folder_id);
@@ -975,14 +987,24 @@ export default function QuestionSolver({
   const isLastQuestion = useMemo(() => {
     if (isFavoriteMode && favoritesList) {
       return retryMode && wrongQuestionIndices.length > 0
-        ? wrongQuestionIndices.indexOf(currentFavoriteIndex) === wrongQuestionIndices.length - 1
+        ? wrongQuestionIndices.indexOf(currentFavoriteIndex) ===
+            wrongQuestionIndices.length - 1
         : currentFavoriteIndex === favoritesList.length - 1;
     } else {
       return retryMode && wrongQuestionIndices.length > 0
-        ? wrongQuestionIndices.findIndex(i => i === currentQuestionIndex) === wrongQuestionIndices.length - 1
+        ? wrongQuestionIndices.findIndex((i) => i === currentQuestionIndex) ===
+            wrongQuestionIndices.length - 1
         : currentQuestionIndex === (parsedData?.questions.length || 0) - 1;
     }
-  }, [isFavoriteMode, favoritesList, currentFavoriteIndex, currentQuestionIndex, retryMode, wrongQuestionIndices, parsedData]);
+  }, [
+    isFavoriteMode,
+    favoritesList,
+    currentFavoriteIndex,
+    currentQuestionIndex,
+    retryMode,
+    wrongQuestionIndices,
+    parsedData,
+  ]);
 
   // 🆕 결과 요약 관련 핸들러 추가
   const handleRestart = useCallback(() => {
@@ -1000,12 +1022,12 @@ export default function QuestionSolver({
   const handleRetryWrong = useCallback(() => {
     // 틀린 문제만 다시 풀기
     const wrongIndices = questionResults
-      .filter(r => !r.isCorrect)
-      .map(r => r.questionIndex)
+      .filter((r) => !r.isCorrect)
+      .map((r) => r.questionIndex)
       .sort((a, b) => a - b);
 
     if (wrongIndices.length === 0) {
-      alert('틀린 문제가 없습니다!');
+      alert("틀린 문제가 없습니다!");
       return;
     }
 
@@ -1019,26 +1041,33 @@ export default function QuestionSolver({
       const firstWrongQuestion = favoritesList[firstWrongIndex];
 
       try {
-        const rawData = JSON.parse(firstWrongQuestion.rawJson || '{}');
+        const rawData = JSON.parse(firstWrongQuestion.rawJson || "{}");
         const parsedQuestion: ParsedQuestion = {
-          type: rawData.type || 'multiple_choice',
-          questions: []
+          type: rawData.type || "multiple_choice",
+          questions: [],
         };
 
         if (rawData.questions && Array.isArray(rawData.questions)) {
           parsedQuestion.questions = rawData.questions;
           if (rawData.questions.length > 0) {
-            parsedQuestion.type = rawData.questions[0].type || 
-              detectQuestionType(rawData.questions[0], firstWrongQuestion.displayType);
+            parsedQuestion.type =
+              rawData.questions[0].type ||
+              detectQuestionType(
+                rawData.questions[0],
+                firstWrongQuestion.displayType,
+              );
           }
         } else {
-          parsedQuestion.type = rawData.type || 
+          parsedQuestion.type =
+            rawData.type ||
             detectQuestionType(rawData, firstWrongQuestion.displayType);
           parsedQuestion.questions = [rawData];
         }
 
         parsedQuestion.type = parsedQuestion.type.toLowerCase();
-        parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
+        parsedQuestion.questions.forEach((q) =>
+          preprocessQuestion(q, parsedQuestion.type),
+        );
 
         setCurrentQuestionItem(firstWrongQuestion);
         setParsedData(parsedQuestion);
@@ -1048,7 +1077,7 @@ export default function QuestionSolver({
         setShowResult(false);
       } catch (error) {
         console.error("문제 파싱 오류:", error);
-        alert('문제를 불러오는데 실패했습니다.');
+        alert("문제를 불러오는데 실패했습니다.");
       }
     } else {
       setCurrentQuestionIndex(wrongIndices[0]);
@@ -1057,50 +1086,60 @@ export default function QuestionSolver({
     }
   }, [questionResults, isFavoriteMode, favoritesList, parsedData]);
 
-  const handleViewQuestion = useCallback((questionIndex: number) => {
-    // 특정 문제로 이동
-    setShowSummary(false);
-    setRetryMode(false);
+  const handleViewQuestion = useCallback(
+    (questionIndex: number) => {
+      // 특정 문제로 이동
+      setShowSummary(false);
+      setRetryMode(false);
 
-    if (isFavoriteMode && favoritesList) {
-      const targetQuestion = favoritesList[questionIndex];
+      if (isFavoriteMode && favoritesList) {
+        const targetQuestion = favoritesList[questionIndex];
 
-      try {
-        const rawData = JSON.parse(targetQuestion.rawJson || '{}');
-        const parsedQuestion: ParsedQuestion = {
-          type: rawData.type || 'multiple_choice',
-          questions: []
-        };
+        try {
+          const rawData = JSON.parse(targetQuestion.rawJson || "{}");
+          const parsedQuestion: ParsedQuestion = {
+            type: rawData.type || "multiple_choice",
+            questions: [],
+          };
 
-        if (rawData.questions && Array.isArray(rawData.questions)) {
-          parsedQuestion.questions = rawData.questions;
-          if (rawData.questions.length > 0) {
-            parsedQuestion.type = rawData.questions[0].type || 
-              detectQuestionType(rawData.questions[0], targetQuestion.displayType);
+          if (rawData.questions && Array.isArray(rawData.questions)) {
+            parsedQuestion.questions = rawData.questions;
+            if (rawData.questions.length > 0) {
+              parsedQuestion.type =
+                rawData.questions[0].type ||
+                detectQuestionType(
+                  rawData.questions[0],
+                  targetQuestion.displayType,
+                );
+            }
+          } else {
+            parsedQuestion.type =
+              rawData.type ||
+              detectQuestionType(rawData, targetQuestion.displayType);
+            parsedQuestion.questions = [rawData];
           }
-        } else {
-          parsedQuestion.type = rawData.type || 
-            detectQuestionType(rawData, targetQuestion.displayType);
-          parsedQuestion.questions = [rawData];
+
+          parsedQuestion.type = parsedQuestion.type.toLowerCase();
+          parsedQuestion.questions.forEach((q) =>
+            preprocessQuestion(q, parsedQuestion.type),
+          );
+
+          setCurrentQuestionItem(targetQuestion);
+          setParsedData(parsedQuestion);
+          setCurrentQuestionIndex(targetQuestion.questionIndex || 0);
+          setCurrentFavoriteIndex(questionIndex);
+          setShowResult(true);
+        } catch (error) {
+          console.error("문제 파싱 오류:", error);
+          alert("문제를 불러오는데 실패했습니다.");
         }
-
-        parsedQuestion.type = parsedQuestion.type.toLowerCase();
-        parsedQuestion.questions.forEach(q => preprocessQuestion(q, parsedQuestion.type));
-
-        setCurrentQuestionItem(targetQuestion);
-        setParsedData(parsedQuestion);
-        setCurrentQuestionIndex(targetQuestion.questionIndex || 0);
-        setCurrentFavoriteIndex(questionIndex);
+      } else {
+        setCurrentQuestionIndex(questionIndex);
         setShowResult(true);
-      } catch (error) {
-        console.error("문제 파싱 오류:", error);
-        alert('문제를 불러오는데 실패했습니다.');
       }
-    } else {
-      setCurrentQuestionIndex(questionIndex);
-      setShowResult(true);
-    }
-  }, [isFavoriteMode, favoritesList]);
+    },
+    [isFavoriteMode, favoritesList],
+  );
 
   // 🆕 결과 요약 화면
   if (showSummary) {
@@ -1141,7 +1180,7 @@ export default function QuestionSolver({
       case "multiple_choice":
         const options = currentQuestion.options || [];
         const correctOption = options.find(
-          (opt: any) => opt.id === String(currentQuestion.correct_answer)
+          (opt: any) => opt.id === String(currentQuestion.correct_answer),
         );
         return correctOption
           ? `${correctOption.id}. ${correctOption.text}`
@@ -1177,7 +1216,7 @@ export default function QuestionSolver({
         const alternatives = currentQuestion.alternative_answers || [];
         if (alternatives.length > 0) {
           return `${currentQuestion.correct_answer} (또는 ${alternatives.join(
-            ", "
+            ", ",
           )})`;
         }
         return currentQuestion.correct_answer;
@@ -1193,11 +1232,28 @@ export default function QuestionSolver({
   return (
     <Box sx={{ mt: { xs: 2, sm: 4 } }}>
       {/* 모바일: 헤더 행 wrap */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          mb: 2,
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={onClose}
+          size="small"
+          sx={{ flexShrink: 0 }}
+        >
           목록으로
         </Button>
-        <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+        <Typography
+          variant="h6"
+          fontWeight={700}
+          sx={{ flexGrow: 1, fontSize: { xs: "1rem", sm: "1.25rem" } }}
+        >
           {retryMode ? "틀린 문제 재도전" : "문제 풀기"}
         </Typography>
         <Tooltip
@@ -1223,16 +1279,16 @@ export default function QuestionSolver({
                 wrongQuestionIndices.length
               } (틀린 문제)`
             : retryMode
-            ? `${
-                wrongQuestionIndices.findIndex(
-                  (i) => i === currentQuestionIndex
-                ) + 1
-              } / ${wrongQuestionIndices.length} (틀린 문제)`
-            : isFavoriteMode
-            ? `즐겨찾기 ${currentFavoriteIndex + 1} / ${favoritesList.length}`
-            : `${currentQuestionIndex + 1} / ${
-                parsedData?.questions.length || 0
-              }`}
+              ? `${
+                  wrongQuestionIndices.findIndex(
+                    (i) => i === currentQuestionIndex,
+                  ) + 1
+                } / ${wrongQuestionIndices.length} (틀린 문제)`
+              : isFavoriteMode
+                ? `즐겨찾기 ${currentFavoriteIndex + 1} / ${favoritesList.length}`
+                : `${currentQuestionIndex + 1} / ${
+                    parsedData?.questions.length || 0
+                  }`}
         </Typography>
       </Box>
 
@@ -1314,7 +1370,14 @@ export default function QuestionSolver({
           </Box>
         )}
 
-        <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", gap: 1 }}>
+        <Box
+          sx={{
+            mt: 3,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 1,
+          }}
+        >
           <Button
             variant="outlined"
             size="small"
@@ -1366,7 +1429,7 @@ export default function QuestionSolver({
           sx: {
             borderRadius: 3,
             padding: 2,
-            m: { xs: 2, sm: 'auto' },
+            m: { xs: 2, sm: "auto" },
           },
         }}
       >
