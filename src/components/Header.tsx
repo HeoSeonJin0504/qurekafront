@@ -1,208 +1,36 @@
 // src/components/Header.tsx
 import React, { useState, useEffect, useRef } from 'react'
-import styled, { css, keyframes, createGlobalStyle } from 'styled-components'
+import styled, { createGlobalStyle } from 'styled-components'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import LogoImage from '../assets/images/큐레카_로고 이미지.png'
 
-// ── 애니메이션 ──────────────────────────────────────────────
-const underlineAnim = keyframes`
-  from { width: 0; left: 50%; }
-  to   { width: 100%; left: 0; }
-`
+// MUI imports (PC 헤더용)
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  Menu,
+  MenuItem,
+  Box,
+  Avatar,
+  Chip,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
+import AccountCircle from '@mui/icons-material/AccountCircle'
 
-const slideDown = keyframes`
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-`
-
-// ── 전역: 드로어 열릴 때 스크롤 잠금 ────────────────────────
+// ── 전역: 모바일 드로어 열릴 때 스크롤 잠금 ─────────────────
 const NoScroll = createGlobalStyle<{ $lock: boolean }>`
   body { overflow: ${({ $lock }) => ($lock ? 'hidden' : '')}; }
 `
 
-// ── 헤더 쉘 ────────────────────────────────────────────────
-const HeaderShell = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  width: 100%;
-  height: 70px;
-  padding: 0 40px;
-  background: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+// ════════════════════════════════════════
+// 모바일 전용 styled-components (768px 이하)
+// ════════════════════════════════════════
 
-  @media (max-width: 768px) {
-    padding: 0 20px;
-    height: 60px;
-  }
-`
-
-// ── 로고 ────────────────────────────────────────────────────
-const LogoLink = styled(NavLink)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: inherit;
-  flex-shrink: 0;
-`
-
-const Logo = styled.img`
-  height: 52px;
-  cursor: pointer;
-  @media (max-width: 768px) { height: 40px; }
-`
-
-// ── 데스크톱 Nav ─────────────────────────────────────────────
-const DesktopNav = styled.ul`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  height: 70px;
-
-  li { display: flex; align-items: center; height: 100%; }
-
-  a {
-    text-decoration: none;
-    color: #333;
-    position: relative;
-    font-size: 1.1em;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 8px;
-    transition: background 0.2s;
-    white-space: nowrap;
-
-    &:hover { background: #f0f0f0; }
-
-    &.active {
-      font-weight: 700;
-      &::after {
-        content: "";
-        position: absolute;
-        bottom: 2px;
-        height: 3px;
-        background: #3b82f6;
-        border-radius: 2px;
-        animation: ${underlineAnim} 0.3s ease-out forwards;
-      }
-    }
-  }
-
-  @media (max-width: 768px) { display: none; }
-`
-
-// ── 유저 배지 + 드롭다운 ────────────────────────────────────
-const UserBadgeWrap = styled.div`
-  position: relative;
-  display: flex;
-  align-items: center;
-`
-
-const UserBadge = styled.button`
-  background: #f0f7ff;
-  border: 1.5px solid #bfdbfe;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 1em;
-  font-weight: 700;
-  cursor: pointer;
-  color: #1e3a8a;
-  transition: background 0.2s;
-  &:hover { background: #dbeafe; }
-`
-
-const Dropdown = styled.div`
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  min-width: 130px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  overflow: hidden;
-  animation: ${slideDown} 0.18s ease;
-  z-index: 300;
-`
-
-const DropdownBtn = styled.button<{ $danger?: boolean }>`
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  font-size: 0.95em;
-  font-weight: 500;
-  color: ${({ $danger }) => ($danger ? '#dc2626' : '#333')};
-  &:hover { background: ${({ $danger }) => ($danger ? '#fff1f2' : '#f5f5f5')}; }
-`
-
-// ── 로그인 링크 (비로그인 데스크톱) ─────────────────────────
-const LoginNavLink = styled(NavLink)`
-  text-decoration: none;
-  font-size: 1em !important;
-  font-weight: 700 !important;
-  padding: 6px 18px !important;
-  border-radius: 8px;
-  border: 2px solid #3b82f6;
-  color: #3b82f6 !important;
-  background: none;
-  transition: background 0.2s, color 0.2s !important;
-  white-space: nowrap;
-
-  &:hover {
-    background: #3b82f6 !important;
-    color: #fff !important;
-  }
-`
-
-// ── 햄버거 버튼 ──────────────────────────────────────────────
-const HamburgerBtn = styled.button<{ $open: boolean }>`
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  width: 40px;
-  height: 40px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 8px;
-  transition: background 0.2s;
-  &:hover { background: #f0f0f0; }
-
-  span {
-    display: block;
-    width: 22px;
-    height: 2px;
-    background: #333;
-    border-radius: 2px;
-    transition: transform 0.25s, opacity 0.25s;
-  }
-
-  ${({ $open }) => $open && css`
-    span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-    span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-  `}
-
-  @media (max-width: 768px) { display: flex; }
-`
-
-// ── 모바일 오버레이 ──────────────────────────────────────────
 const MobileOverlay = styled.div<{ $open: boolean }>`
   display: none;
-
   @media (max-width: 768px) {
     display: block;
     position: fixed;
@@ -215,10 +43,8 @@ const MobileOverlay = styled.div<{ $open: boolean }>`
   }
 `
 
-// ── 모바일 슬라이드다운 메뉴 ─────────────────────────────────
 const MobileMenu = styled.nav<{ $open: boolean }>`
   display: none;
-
   @media (max-width: 768px) {
     display: flex;
     flex-direction: column;
@@ -245,7 +71,6 @@ const MobileNavItem = styled(NavLink)`
   font-weight: 600;
   border-bottom: 1px solid #f5f5f5;
   transition: background 0.15s;
-
   &:last-child { border-bottom: none; }
   &:hover, &.active {
     background: #eff6ff;
@@ -309,29 +134,66 @@ const MobileLoginBtn = styled(NavLink)`
   &:hover { opacity: 0.9; }
 `
 
-// ════════════════════════════════════════════════════════════
+// 햄버거 버튼 (모바일에서만 표시)
+const HamburgerWrap = styled.div`
+  display: none;
+  @media (max-width: 768px) { display: flex; }
+`
+
+const HamburgerBtn = styled.button<{ $open: boolean }>`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  &:hover { background: rgba(0,0,0,0.06); }
+
+  span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: #333;
+    border-radius: 2px;
+    transition: transform 0.25s, opacity 0.25s;
+  }
+
+  ${({ $open }) => $open && `
+    span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  `}
+`
+
+// ════════════════════════════════════════
+// 메인 컴포넌트
+// ════════════════════════════════════════
 export default function Header() {
   const { isLoggedIn, logout, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // PC 드롭다운 (MUI Menu)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+
+  // 모바일 드로어
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')) // ≤ 900px → 모바일
+
+  // 페이지 이동 시 모바일 메뉴 닫기
   useEffect(() => {
     setMobileOpen(false)
-    setDropdownOpen(false)
+    setAnchorEl(null)
   }, [location.pathname])
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
 
   const handleNavigation = (path: string) => {
     if (location.pathname === path) {
@@ -342,15 +204,18 @@ export default function Header() {
     setMobileOpen(false)
   }
 
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget)
+  const handleMenuClose = () => setAnchorEl(null)
+
   const handleLogout = () => {
     logout()
-    setDropdownOpen(false)
+    handleMenuClose()
     setMobileOpen(false)
     navigate('/')
   }
 
   const handleMypage = () => {
-    setDropdownOpen(false)
+    handleMenuClose()
     setMobileOpen(false)
     navigate('/mypage')
   }
@@ -367,51 +232,130 @@ export default function Header() {
     <>
       <NoScroll $lock={mobileOpen} />
 
-      <HeaderShell>
-        <LogoLink to="/" className="main-link" onClick={(e) => { e.preventDefault(); handleNavigation('/') }}>
-          <Logo src={LogoImage} alt="큐레카 로고" />
-        </LogoLink>
+      {/* ── PC 헤더 (MUI AppBar) ── */}
+      <AppBar
+        position="sticky"
+        color="transparent"
+        elevation={3}
+        sx={{ display: { xs: 'none', md: 'flex' } }}
+      >
+        <Toolbar sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingTop: 1.5,
+          paddingBottom: 1.5,
+        }}>
+          {/* 로고 */}
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+            onClick={() => handleNavigation('/')}
+          >
+            <img
+              src={LogoImage}
+              alt="큐레카 로고"
+              style={{ height: 60, marginRight: 8 }}
+            />
+          </Box>
 
-        {/* 데스크톱 메뉴 */}
-        <DesktopNav>
-          {navItems.map(item => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={isActive(item.path) ? 'active' : ''}
-                onClick={(e) => { e.preventDefault(); handleNavigation(item.path) }}
-                data-navigation="true"
-              >
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-          <li>
+          {/* 메뉴 + 유저 */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Button
+              variant="text"
+              onClick={() => handleNavigation('/')}
+              sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+              data-navigation="true"
+            >
+              홈
+            </Button>
+            <Button
+              variant="text"
+              onClick={() => handleNavigation('/upload')}
+              sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+              data-navigation="true"
+            >
+              실습하기
+            </Button>
+            <Button
+              variant="text"
+              onClick={() => handleNavigation('/solve-questions')}
+              sx={{ textTransform: 'none', mr: 2, fontSize: '1.3rem' }}
+              data-navigation="true"
+            >
+              문제 풀기
+            </Button>
+
             {isLoggedIn ? (
-              <UserBadgeWrap ref={dropdownRef}>
-                <UserBadge onClick={() => setDropdownOpen(v => !v)}>
-                  {user?.name || '사용자'}님 ▾
-                </UserBadge>
-                {dropdownOpen && (
-                  <Dropdown>
-                    <DropdownBtn onClick={handleMypage}>마이페이지</DropdownBtn>
-                    <DropdownBtn $danger onClick={handleLogout}>로그아웃</DropdownBtn>
-                  </Dropdown>
-                )}
-              </UserBadgeWrap>
+              <>
+                <Chip
+                  label={user?.name || '사용자'}
+                  onClick={handleMenuOpen}
+                  avatar={
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.7rem' }}>
+                        {user?.name?.charAt(0) || 'U'}
+                      </span>
+                    </Avatar>
+                  }
+                  variant="outlined"
+                  clickable
+                  sx={{
+                    cursor: 'pointer',
+                    fontSize: '1.1rem',
+                    color: 'black',
+                    borderColor: 'white',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                      borderColor: 'white',
+                      color: 'black',
+                    },
+                  }}
+                />
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                >
+                  <MenuItem onClick={handleMypage}>마이페이지</MenuItem>
+                  <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
+                </Menu>
+              </>
             ) : (
-              <LoginNavLink
-                to="/login"
-                className={isActive('/login') ? 'active' : ''}
-                onClick={(e) => { e.preventDefault(); handleNavigation('/login') }}
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => navigate('/login')}
+                sx={{ fontSize: '1.1rem', py: 0.5, height: 'auto' }}
               >
                 로그인
-              </LoginNavLink>
+              </Button>
             )}
-          </li>
-        </DesktopNav>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-        {/* 모바일 햄버거 */}
+      {/* ── 모바일 헤더 (기존 styled-components) ── */}
+      <header style={{
+        display: isMobile ? 'flex' : 'none',
+        position: 'sticky',
+        top: 0,
+        zIndex: 200,
+        width: '100%',
+        height: '60px',
+        padding: '0 20px',
+        background: '#fff',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+        boxSizing: 'border-box',
+      }}>
+        <NavLink
+          to="/"
+          onClick={(e) => { e.preventDefault(); handleNavigation('/') }}
+          style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+        >
+          <img src={LogoImage} alt="큐레카 로고" style={{ height: 40 }} />
+        </NavLink>
+
         <HamburgerBtn
           $open={mobileOpen}
           onClick={() => setMobileOpen(v => !v)}
@@ -421,10 +365,12 @@ export default function Header() {
           <span />
           <span />
         </HamburgerBtn>
-      </HeaderShell>
+      </header>
 
+      {/* 모바일 오버레이 */}
       <MobileOverlay $open={mobileOpen} onClick={() => setMobileOpen(false)} />
 
+      {/* 모바일 슬라이드 메뉴 */}
       <MobileMenu $open={mobileOpen}>
         {navItems.map(item => (
           <MobileNavItem
