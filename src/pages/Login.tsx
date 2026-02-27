@@ -34,7 +34,36 @@ export default function Login() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
+  const TEST_USERID = import.meta.env.VITE_TEST_USERID ?? 'testuser'
+  const TEST_PASSWORD = import.meta.env.VITE_TEST_PASSWORD ?? 'test1234'
+
   const handleClickShowPassword = () => setShowPassword(prev => !prev)
+
+  const handleTestLogin = async () => {
+    if (isLoading) return
+    setError(null)
+    setIsLoading(true)
+    try {
+      const res = await userAPI.login(TEST_USERID, TEST_PASSWORD, rememberMe)
+      if (res.data.success) {
+        login(res.data.tokens.accessToken, res.data.user)
+        navigate('/')
+      } else {
+        setError(res.data.message || '테스트 계정 로그인에 실패했습니다.')
+      }
+    } catch (err: any) {
+      console.error(err)
+      const statusCode = err.response?.status
+      const errorMessage = err.response?.data?.message || '서버 오류로 로그인할 수 없습니다.'
+      if (statusCode === 429) {
+        setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
+      } else {
+        setError(errorMessage)
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleLogin = async () => {
     if (isLoading) return
@@ -192,7 +221,7 @@ export default function Login() {
               color="primary"
               fullWidth
               sx={{
-                mb: isMobile ? 1.5 : 2,
+                mb: isMobile ? 1 : 1.5,
                 py: isMobile ? 1.2 : undefined,
                 fontSize: isMobile ? '1rem' : undefined,
                 borderRadius: isMobile ? 2 : undefined,
@@ -201,6 +230,23 @@ export default function Login() {
               disabled={isLoading}
             >
               {isLoading ? <CircularProgress size={24} color="inherit" /> : '로그인'}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              sx={{
+                mb: isMobile ? 1.5 : 2,
+                py: isMobile ? 1.2 : undefined,
+                fontSize: isMobile ? '0.9rem' : '0.875rem',
+                borderRadius: isMobile ? 2 : undefined,
+              }}
+              onClick={handleTestLogin}
+              disabled={isLoading}
+            >
+              테스트 계정으로 로그인
             </Button>
 
             <Typography
