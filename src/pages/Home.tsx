@@ -70,6 +70,41 @@ const IndigoBtn = styled(PrimaryBtn)`
   &:hover { box-shadow: 0 8px 24px rgba(99,102,241,0.45); }
 `
 
+const HeroBtnGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    align-items: center;
+  }
+`
+
+const DemoBtn = styled.button`
+  display: inline-block;
+  background: #fff;
+  border: 2px solid #3b82f6;
+  border-radius: 50px;
+  color: #2563eb;
+  padding: 11px 28px;
+  font-size: 0.98em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: #eff6ff;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.2);
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`
+
 // ════════════════════════════════════════════════════════════
 // ─── 1. 히어로 섹션 ──────────────────────────────────────────
 // ════════════════════════════════════════════════════════════
@@ -413,6 +448,7 @@ function Home() {
   const { isLoggedIn } = useAuth();
 
   const goStart = () => navigate(isLoggedIn ? '/upload' : '/login');
+  const goDemo = () => navigate('/demo');
 
   const steps = [
     "요약 또는 문제 생성 중 원하는 기능을 선택하세요.",
@@ -441,7 +477,10 @@ function Home() {
                 맞춤형 문제를 제공합니다.<br />
                 더 효율적인 공부, 지금 경험해보세요!
               </HeroSubtitle>
-              <PrimaryBtn onClick={goStart}>시작하기! 🚀</PrimaryBtn>
+              <HeroBtnGroup>
+                <DemoBtn onClick={goDemo}>업로드 없이 빠른 체험하기</DemoBtn>
+                <PrimaryBtn onClick={goStart}>시작하기! 🚀</PrimaryBtn>
+              </HeroBtnGroup>
             </HeroText>
           </HeroInner>
         </Container>

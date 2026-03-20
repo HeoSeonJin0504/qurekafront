@@ -251,6 +251,65 @@ export const aiQuestionAPI = {
     }),
 };
 
+export interface DemoTopic {
+  key: string;
+  title: string;
+  description: string;
+}
+
+export interface DemoSummarizeRequest {
+  topicKey: string;
+  summaryType?: string;
+  summary_type?: string;
+  level?: string;
+  field?: string;
+  sentenceCount?: number;
+  sentence_count?: number;
+  topicCount?: number;
+  topic_count?: number;
+  keywordCount?: number;
+  keyword_count?: number;
+  userKeywords?: string[];
+  user_keywords?: string[];
+}
+
+export interface DemoGenerateRequest {
+  topicKey: string;
+  questionType?: string;
+  question_type?: string;
+  questionCount?: number;
+  question_count?: number;
+  level?: string;
+  field?: string;
+  choiceCount?: number;
+  choice_count?: number;
+  choiceFormat?: string;
+  choice_format?: string;
+  arrayChoiceCount?: number;
+  array_choice_count?: number;
+  optionCount?: number;
+  option_count?: number;
+  blankCount?: number;
+  blank_count?: number;
+  optionFormat?: string;
+  option_format?: string;
+}
+
+export const demoAPI = {
+  getTopics: () =>
+    backendAPI.get<{ success: boolean; topics: DemoTopic[] }>('/demo/topics'),
+
+  summarize: (data: DemoSummarizeRequest) =>
+    backendAPI.post('/demo/summarize', data, {
+      headers: { 'Content-Type': 'application/json' },
+    }),
+
+  generate: (data: DemoGenerateRequest) =>
+    backendAPI.post('/demo/generate', data, {
+      headers: { 'Content-Type': 'application/json' },
+    }),
+};
+
 // 요약 저장·조회·삭제 API
 export interface SummaryItem {
   selection_id: number

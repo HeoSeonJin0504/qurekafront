@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom'
 import SignupPage from '../pages/SignupPage'
 import LoginPage from '../pages/Login'
 import Home from '../pages/Home'
+import DemoPage from '../pages/DemoPage'
 import UploadPage from '../pages/UploadPage'
 import Mypage from '../pages/Mypage'
 import QuestionSolvePage from '../pages/QuestionSolvePage'
@@ -45,6 +46,7 @@ export default function AppRouter() {
       <Routes>
         {/* 공개 경로 */}
         <Route path="/" element={<Home />} />
+        <Route path="/demo" element={<DemoPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
 
