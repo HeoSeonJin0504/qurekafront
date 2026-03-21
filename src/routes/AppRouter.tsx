@@ -46,9 +46,17 @@ export default function AppRouter() {
       <Routes>
         {/* 공개 경로 */}
         <Route path="/" element={<Home />} />
-        <Route path="/demo" element={<DemoPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+
+        <Route
+          path="/demo"
+          element={
+            <PrivateRoute>
+              <DemoPage />
+            </PrivateRoute>
+          }
+        />
 
         {/* 보호된 경로 */}
         <Route
