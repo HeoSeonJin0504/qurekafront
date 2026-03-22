@@ -18,7 +18,8 @@ import {
   Chip,
   TextField,
   InputAdornment,
-  IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -32,6 +33,8 @@ interface SavedSummaryDialogProps {
 }
 
 const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, onSelectSummary }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user } = useAuth();
   const [summaries, setSummaries] = useState<SummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,16 +81,22 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={isMobile}>
       <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          gap={1.5}
+        >
           <Typography variant="h6">저장된 요약 목록</Typography>
           <TextField
             placeholder="검색..."
             size="small"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ width: '40%' }}
+            sx={{ width: { xs: '100%', sm: '40%' } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -112,8 +121,8 @@ const SavedSummaryDialog: React.FC<SavedSummaryDialogProps> = ({ open, onClose, 
             {searchQuery ? '검색 결과가 없습니다.' : '저장된 요약이 없습니다.'}
           </Typography>
         ) : (
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
+          <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 680 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>요약본 이름</TableCell>

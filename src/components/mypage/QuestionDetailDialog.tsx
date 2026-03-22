@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  Typography, Box, CircularProgress, IconButton
+  Dialog, DialogTitle, DialogContent, Button,
+  Typography, Box, CircularProgress, IconButton, useMediaQuery, useTheme
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import { FileItem, QuestionItem } from '../../types/mypage'
@@ -21,6 +21,8 @@ interface QuestionDetailDialogProps {
 export default function QuestionDetailDialog({
   open, onClose, item, dialogTitle, dialogText, onDownload, onRename
 }: QuestionDetailDialogProps) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [parsedQuestions, setParsedQuestions] = useState<Question[]>([])
   const [isJsonFormat, setIsJsonFormat] = useState(false)
   const [formattedText, setFormattedText] = useState<string>('')
@@ -304,34 +306,50 @@ export default function QuestionDetailDialog({
         )}
       </DialogContent>
       
-      <DialogActions sx={{ justifyContent: 'flex-end', px: 3, py: 2, gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          px: 3,
+          py: 2,
+          gap: 1,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          ...(isMobile
+            ? { flexDirection: 'column' }
+            : { flexDirection: 'row', justifyContent: 'flex-end' }
+          ),
+        }}
+      >
         {onRename && item && (
           <Button
-            onClick={() => {
-              onRename(item)
-              // onClose() 제거 - 다이얼로그를 닫지 않음
-            }}
+            onClick={() => { onRename(item) }}
             variant="outlined"
             color="primary"
+            fullWidth={isMobile}
+            size={isMobile ? 'large' : 'medium'}
           >
             이름 변경
           </Button>
         )}
-        <Button 
-          onClick={handleDownloadTxt} 
+        <Button
+          onClick={handleDownloadTxt}
           variant="outlined"
           color="primary"
+          fullWidth={isMobile}
+          size={isMobile ? 'large' : 'medium'}
         >
           텍스트 다운로드
         </Button>
-        <Button 
-          onClick={handleDownloadPDF} 
-          variant="outlined" 
+        <Button
+          onClick={handleDownloadPDF}
+          variant="outlined"
           color="primary"
+          fullWidth={isMobile}
+          size={isMobile ? 'large' : 'medium'}
         >
           PDF 다운로드
         </Button>
-      </DialogActions>
+      </Box>
     </Dialog>
   )
 }

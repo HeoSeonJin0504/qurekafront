@@ -113,7 +113,7 @@ export default function SequenceQuestion({
 
     // 선택 상태 초기화
     const initialSelections: { [position: number]: number | null } = {};
-    items.forEach((_, index) => {
+    items.forEach((_: any, index: number) => {
       initialSelections[index] = null;
     });
     setSelections(initialSelections);
@@ -196,7 +196,7 @@ export default function SequenceQuestion({
                   }}
                 >
                   <Grid container alignItems="center" spacing={2}>
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                       <Typography
                         sx={{
                           fontWeight: "bold",
@@ -206,7 +206,7 @@ export default function SequenceQuestion({
                       </Typography>
                     </Grid>
 
-                    <Grid item xs={12} md={8}>
+                    <Grid size={{ xs: 12, md: 8 }}>
                       <FormControl component="fieldset" fullWidth>
                         <RadioGroup
                           value={selections[position] || ""}
@@ -216,12 +216,7 @@ export default function SequenceQuestion({
                         >
                           <Grid container spacing={1}>
                             {items.map((option) => (
-                              <Grid
-                                item
-                                xs={12}
-                                md={6}
-                                key={`option-${option.id}-pos-${position}`}
-                              >
+                              <Grid size={{ xs: 12, md: 6 }} key={`option-${option.id}-pos-${position}`}>
                                 <FormControlLabel
                                   value={option.id}
                                   control={<Radio disabled={showResult} />}
@@ -254,7 +249,7 @@ export default function SequenceQuestion({
             정답 순서:
           </Typography>
           <List dense>
-            {correctSequence.map((id, index) => {
+            {correctSequence.map((id: number, index: number) => {
               const item = getItemById(id);
               return (
                 <ListItem key={`correct-${id}`}>

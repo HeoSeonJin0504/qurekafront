@@ -390,20 +390,12 @@ export default function Mypage() {
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
-        fullScreen={isMobile}  // 모바일에서 풀스크린 대신 bottom sheet 느낌
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? "16px 16px 0 0" : 3,
+            borderRadius: 3,
             padding: isMobile ? 1 : 2,
-            minWidth: isMobile ? "100%" : 420,
-            // 모바일: 화면 하단에 붙이기
-            ...(isMobile && {
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              margin: 0,
-            }),
+            width: isMobile ? "calc(100% - 32px)" : 420,
+            maxWidth: 420,
           },
         }}
       >

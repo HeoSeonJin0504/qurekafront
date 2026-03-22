@@ -81,7 +81,7 @@ export default function TrueFalseQuestion({
         </Typography>
         
         <Grid container spacing={3} justifyContent="center" alignItems="center">
-          <Grid item xs={6} sm={5} md={4} sx={{ textAlign: 'center' }}>
+          <Grid size={{ xs: 6, sm: 5, md: 4 }} sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"
               onClick={() => handleButtonClick(true)}
@@ -107,7 +107,7 @@ export default function TrueFalseQuestion({
             </Typography>
           </Grid>
           
-          <Grid item xs={6} sm={5} md={4} sx={{ textAlign: 'center' }}>
+          <Grid size={{ xs: 6, sm: 5, md: 4 }} sx={{ textAlign: 'center' }}>
             <Button
               variant="contained"
               onClick={() => handleButtonClick(false)}

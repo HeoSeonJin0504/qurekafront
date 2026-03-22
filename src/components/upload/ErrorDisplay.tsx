@@ -79,7 +79,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
       <Paper
         elevation={6}
         sx={{
-          p: 6,
+          p: { xs: 2.5, sm: 6 },
           borderRadius: 4,
           background: "#ffffff",
           textAlign: "center",
@@ -88,8 +88,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         <Stack spacing={4} alignItems="center">
           <Box
             sx={{
-              width: 120,
-              height: 120,
+              width: { xs: 84, sm: 120 },
+              height: { xs: 84, sm: 120 },
               borderRadius: '50%',
               background: config.gradient,
               display: 'flex',
@@ -102,7 +102,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
           </Box>
 
           <Box>
-            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: config.color }}>
+            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: config.color, fontSize: { xs: '1.4rem', sm: '2rem' } }}>
               {config.title}
             </Typography>
             <Typography variant="body1" color="text.secondary">
@@ -110,7 +110,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
             </Typography>
           </Box>
 
-          <Alert severity={errorType === 'short_text' ? 'warning' : 'error'} sx={{ maxWidth: 600, textAlign: 'left' }}>
+          <Alert severity={errorType === 'short_text' ? 'warning' : 'error'} sx={{ maxWidth: 600, width: '100%', textAlign: 'left' }}>
             <Typography variant="body2" component="div">
               {config.suggestions.map((suggestion, index) => (
                 <React.Fragment key={index}>
@@ -128,8 +128,9 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
             onClick={onRetry}
             sx={{
               borderRadius: 3,
-              px: 5,
+              px: { xs: 2, sm: 5 },
               py: 1.5,
+              width: { xs: '100%', sm: 'auto' },
               background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
               "&:hover": {
                 background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",

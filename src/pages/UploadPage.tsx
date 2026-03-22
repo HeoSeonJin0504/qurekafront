@@ -15,6 +15,8 @@ import {
   keyframes,
   Avatar,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -72,6 +74,11 @@ const NavRow = styled.div`
   @media (max-width: 600px) {
     padding: 0 4px;
     gap: 8px;
+    flex-wrap: wrap;
+
+    > * {
+      flex: 1 1 calc(50% - 4px);
+    }
   }
 `
 
@@ -168,6 +175,8 @@ const ParticleLoading = ({ message }: { message: string }) => (
 
 // ════════════════════════════════════════════════════════════
 export default function UploadPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const state = useUploadState();
   const handlers = useUploadHandlers(state);
   const navigate = useNavigate();
@@ -433,17 +442,19 @@ export default function UploadPage() {
               >
                 <Stepper
                   activeStep={state.activeStep}
-                  alternativeLabel
+                  alternativeLabel={!isMobile}
                   sx={{
                     // 모바일에서 스텝 라벨 폰트 줄이기
                     '& .MuiStepLabel-label': {
                       fontSize: { xs: '0.7rem', sm: '1rem' },
                       fontWeight: 600,
+                      whiteSpace: 'nowrap',
                     },
+                    '& .MuiStep-root': { px: { xs: 0.5, sm: 1 } },
                     '& .MuiStepIcon-root': { color: "#93c5fd" },
                     '& .MuiStepIcon-root.Mui-active': { color: "#3b82f6" },
                     '& .MuiStepIcon-root.Mui-completed': { color: "#10b981" },
-                    minWidth: steps.length >= 5 ? { xs: 400, sm: 'auto' } : 'auto',
+                    minWidth: { xs: Math.max(steps.length * 110, 360), sm: 'auto' },
                   }}
                 >
                   {steps.map((label, index) => {

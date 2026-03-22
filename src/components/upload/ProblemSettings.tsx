@@ -13,6 +13,8 @@ import {
   DialogContent,
   IconButton,
   DialogActions,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { Settings as SettingsIcon } from '@mui/icons-material'
 import SchoolIcon from '@mui/icons-material/School'
@@ -67,6 +69,9 @@ export default function ProblemSettings({
   hasSummaryText,
   showSavedSummaryButton = true, // 기본값은 true
 }: ProblemSettingsProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <>
       {/* Problem Tabs */}
@@ -84,9 +89,18 @@ export default function ProblemSettings({
         <Tabs
           value={qTab}
           onChange={(_, v) => setQTab(v)}
-          variant="fullWidth"
+          variant={isMobile ? 'scrollable' : 'fullWidth'}
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           TabIndicatorProps={{ style: { display: 'none' } }}
-          sx={{ '& .MuiTabs-flexContainer': { gap: 0.5, p: 1 } }}
+          sx={{
+            minHeight: { xs: 56, sm: 60 },
+            '& .MuiTabs-flexContainer': { gap: 0.5, p: 1 },
+            '& .MuiTabs-scrollButtons': {
+              width: 28,
+              '&.Mui-disabled': { opacity: 0.3 },
+            },
+          }}
         >
           {questionLabels.map((label, idx) => (
             <Tab
@@ -98,8 +112,11 @@ export default function ProblemSettings({
                 bgcolor: 'transparent',
                 borderRadius: 2,
                 minHeight: 48,
-                fontSize: '0.9rem',
+                minWidth: { xs: 96, sm: 0 },
+                px: { xs: 1.5, sm: 2 },
+                fontSize: { xs: '0.82rem', sm: '0.9rem' },
                 fontWeight: 500,
+                whiteSpace: 'nowrap',
                 '&.Mui-selected': {
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
@@ -126,7 +143,7 @@ export default function ProblemSettings({
         sx={{
           background: 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
           borderRadius: 3,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           mb: 3,
           border: '1px solid rgba(148, 163, 184, 0.2)',
           boxShadow:
@@ -140,8 +157,9 @@ export default function ProblemSettings({
             color: '#1e293b', 
             fontWeight: 600, 
             display: 'flex', 
-            alignItems: 'center', 
             justifyContent: 'space-between',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
             gap: 1 
           }}
         >
@@ -149,7 +167,7 @@ export default function ProblemSettings({
             <SettingsIcon sx={{ color: '#6366f1' }} />
             문제 설정
           </Box>
-          <Box display="flex" gap={1}>
+          <Box display="flex" gap={1} sx={{ flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
             {hasSummaryText && (
               <>
                 <Button 
@@ -157,6 +175,7 @@ export default function ProblemSettings({
                   startIcon={<LibraryBooksIcon />}
                   onClick={() => setOpenSummaryDialog(true)}
                   size="small"
+                  sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'center' }}
                 >
                   현재 요약본 보기
                 </Button>
@@ -167,6 +186,7 @@ export default function ProblemSettings({
                     startIcon={<LibraryBooksIcon />}
                     onClick={openSavedSummariesDialog}
                     size="small"
+                    sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'center' }}
                   >
                     저장된 요약 선택하기
                   </Button>
@@ -176,7 +196,7 @@ export default function ProblemSettings({
           </Box>
         </Typography>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3 } }}>
           {/* 분야 */}
           <Box sx={{ width: { xs: '100%', sm: 'calc(33.333% - 16px)' } }}>
             <Typography variant="subtitle2" sx={{ mb: 1, color: '#475569', fontWeight: 500 }}>
@@ -406,7 +426,7 @@ export default function ProblemSettings({
             border: '1px dashed rgba(99,102,241,0.2)',
           }}
         >
-          <Typography variant="caption" sx={{ color: '#6366f1', fontWeight: 500, fontSize: '1rem' }}>
+          <Typography variant="caption" sx={{ color: '#6366f1', fontWeight: 500, fontSize: { xs: '0.85rem', sm: '1rem' }, lineHeight: 1.6 }}>
             설정 미리보기: {qField} 분야의 {qLevel} 수준으로 {qCount}문제
             {qTab === 0 && `, 보기 ${optCount}개, ${optionFormat}`}
             {qTab === 1 && `, 선택지 ${optCount}개`}
@@ -416,7 +436,7 @@ export default function ProblemSettings({
       </Box>
 
       {/* Summary Dialog */}
-      <Dialog open={openSummaryDialog} onClose={() => setOpenSummaryDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openSummaryDialog} onClose={() => setOpenSummaryDialog(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">현재 요약본</Typography>

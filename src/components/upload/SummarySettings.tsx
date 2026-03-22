@@ -10,6 +10,8 @@ import {
   Tabs,
   Tab,
   Button,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import TuneIcon from "@mui/icons-material/Tune";
 import SchoolIcon from "@mui/icons-material/School";
@@ -59,6 +61,9 @@ export default function SummarySettings({
   setAiSummaryType,
   setDbSummaryTypeKorean,
 }: SummarySettingsProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const handleKeywordChange = (index: number, value: string) => {
     const newKeywords = [...keywords];
     newKeywords[index] = value;
@@ -86,9 +91,18 @@ export default function SummarySettings({
             setAiSummaryType(aiSummaryPromptKeys[v]);
             setDbSummaryTypeKorean(dbSummaryPromptKeys_Korean[v]);
           }}
-          variant="fullWidth"
+          variant={isMobile ? "scrollable" : "fullWidth"}
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           TabIndicatorProps={{ style: { display: "none" } }}
-          sx={{ "& .MuiTabs-flexContainer": { gap: 0.5, p: 1 } }}
+          sx={{
+            minHeight: { xs: 56, sm: 60 },
+            "& .MuiTabs-flexContainer": { gap: 0.5, p: 1 },
+            "& .MuiTabs-scrollButtons": {
+              width: 28,
+              "&.Mui-disabled": { opacity: 0.3 },
+            },
+          }}
         >
           {summaryLabels.map((label, idx) => (
             <Tab
@@ -100,8 +114,11 @@ export default function SummarySettings({
                 bgcolor: "transparent",
                 borderRadius: 2,
                 minHeight: 48,
-                fontSize: "0.9rem",
+                minWidth: { xs: 88, sm: 0 },
+                px: { xs: 1.5, sm: 2 },
+                fontSize: { xs: "0.83rem", sm: "0.9rem" },
                 fontWeight: 500,
+                whiteSpace: "nowrap",
                 "&.Mui-selected": {
                   bgcolor: "primary.main",
                   color: "primary.contrastText",
@@ -128,7 +145,7 @@ export default function SummarySettings({
         sx={{
           background: "linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)",
           borderRadius: 3,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           mb: 3,
           border: "1px solid rgba(148, 163, 184, 0.2)",
           boxShadow:
@@ -150,7 +167,7 @@ export default function SummarySettings({
           요약 설정
         </Typography>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 2, sm: 3 } }}>
           {/* 분야 */}
           <Box sx={{ width: { xs: "100%", sm: "calc(33.333% - 16px)" } }}>
             <Typography
@@ -688,9 +705,9 @@ export default function SummarySettings({
                 onClick={() => setKeywords(Array(sumKeywordCount).fill(""))}
                 sx={{
                   borderRadius: 1.5,
-                  px: 2,
+                  px: { xs: 1.25, sm: 2 },
                   py: 0.5,
-                  fontSize: "0.85rem",
+                  fontSize: { xs: "0.78rem", sm: "0.85rem" },
                   fontWeight: 500,
                   color: "#8b5cf6",
                   borderColor: "#8b5cf6",
@@ -755,7 +772,7 @@ export default function SummarySettings({
         >
           <Typography
             variant="caption"
-            sx={{ color: "#6366f1", fontWeight: 500, fontSize: "1rem" }}
+            sx={{ color: "#6366f1", fontWeight: 500, fontSize: { xs: "0.85rem", sm: "1rem" }, lineHeight: 1.6 }}
           >
             설정 미리보기: {sumField} 분야의 {sumLevel} 수준으로
             {sumTab === 0 && ` ${sumSentCount}개 문장 기본 요약`}

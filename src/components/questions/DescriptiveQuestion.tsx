@@ -54,7 +54,7 @@ export default function DescriptiveQuestion({
     const matchedKeywords: string[] = [];
     const unmatchedKeywords: string[] = [];
     
-    answerKeywords.forEach(keyword => {
+    answerKeywords.forEach((keyword: string) => {
       if (lowerAnswer.includes(keyword.toLowerCase())) {
         matchedKeywords.push(keyword);
       } else {
@@ -232,7 +232,7 @@ export default function DescriptiveQuestion({
             </Typography>
             
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Paper 
                   elevation={1} 
                   sx={{ p: 2, bgcolor: 'success.light', color: 'white', height: '100%' }}
@@ -248,7 +248,7 @@ export default function DescriptiveQuestion({
                 </Paper>
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Paper 
                   elevation={1} 
                   sx={{ p: 2, bgcolor: 'error.light', color: 'white', height: '100%' }}

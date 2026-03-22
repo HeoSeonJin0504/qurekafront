@@ -10,13 +10,16 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Paper,
   Select,
+  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
+import { CheckCircleOutline, Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import PageNavigator from '../components/common/PageNavigator';
@@ -30,7 +33,7 @@ import {
 } from '../constants/upload';
 import { DEMO_CONTENTS } from '../constants/demo';
 import { useAuth } from '../contexts/AuthContext';
-import { demoAPI, DemoTopic } from '../services/api';
+import { demoAPI, DemoTopic, questionAPI } from '../services/api';
 import { Question } from '../types/upload';
 import { downloadAsPDF } from '../utils/pdfUtils';
 import SummarySettings from '../components/upload/SummarySettings';
@@ -62,7 +65,7 @@ const parseQuestionJson = (jsonText: string): Question[] | null => {
 };
 
 export default function DemoPage() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const navigate = useNavigate();
 
   const [topics, setTopics] = useState<DemoTopic[]>([]);
@@ -95,10 +98,12 @@ export default function DemoPage() {
   const [summaryError, setSummaryError] = useState('');
 
   const [questionLoading, setQuestionLoading] = useState(false);
+  const [savingAndSolving, setSavingAndSolving] = useState(false);
   const [questionText, setQuestionText] = useState('');
   const [questionError, setQuestionError] = useState('');
   const [parsedQuestions, setParsedQuestions] = useState<Question[]>([]);
   const [isJsonFormat, setIsJsonFormat] = useState(false);
+  const [openQDoneSnackbar, setOpenQDoneSnackbar] = useState(false);
 
   const isGenerating = summaryLoading || questionLoading;
 
@@ -251,6 +256,36 @@ export default function DemoPage() {
   const handleForceNavigation = () => {
     setSummaryLoading(false);
     setQuestionLoading(false);
+    setSavingAndSolving(false);
+  };
+
+  const handleSaveAndSolve = async () => {
+    if (!requireLogin() || !user) return;
+    if (!questionText) return;
+
+    setSavingAndSolving(true);
+
+    try {
+      const baseName = selectedTopic?.title || 'demo-questions';
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+
+      await questionAPI.saveQuestion({
+        userId: user.id,
+        fileName: baseName,
+        questionName: `${baseName}-실습용-${timestamp}`,
+        questionType: aiQuestionPromptKeys_Korean[qTab],
+        questionText,
+      });
+
+      setOpenQDoneSnackbar(true);
+      setTimeout(() => {
+        navigate('/solve-questions');
+      }, 1800);
+    } catch (error: any) {
+      setQuestionError(parseApiError(error));
+    } finally {
+      setSavingAndSolving(false);
+    }
   };
 
   return (
@@ -431,6 +466,7 @@ export default function DemoPage() {
                 }
                 onRegenerate={handleGenerateSummary}
                 disabled={summaryLoading}
+                showSaveButton={false}
               />
             )}
 
@@ -512,7 +548,10 @@ export default function DemoPage() {
                   )
                 }
                 onRegenerate={handleGenerateQuestion}
-                disabled={questionLoading}
+                disabled={questionLoading || savingAndSolving}
+                showSaveButton={false}
+                onPractice={handleSaveAndSolve}
+                practiceButtonLabel={savingAndSolving ? '저장 중...' : '저장 후 문제풀기'}
               />
             )}
 
@@ -546,12 +585,73 @@ export default function DemoPage() {
                   <Button variant="outlined" onClick={handleGenerateQuestion}>
                     다시 생성하기
                   </Button>
+                  <Button variant="outlined" color="success" onClick={handleSaveAndSolve} disabled={savingAndSolving}>
+                    {savingAndSolving ? '저장 중...' : '저장 후 문제풀기'}
+                  </Button>
                 </Stack>
               </Paper>
             )}
           </Stack>
         </Container>
       </Box>
+
+      <Snackbar
+        open={openQDoneSnackbar}
+        onClose={() => setOpenQDoneSnackbar(false)}
+        autoHideDuration={10000}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ mt: 8 }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            minWidth: { xs: 0, sm: 400 },
+            width: { xs: 'calc(100vw - 32px)', sm: 'auto' },
+            background: '#E8F9EE',
+            color: '#1a5d3a',
+            borderRadius: 2,
+            boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+            px: 2,
+            py: 1.5,
+            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+          }}
+        >
+          <CheckCircleOutline sx={{ fontSize: 22, color: '#1a5d3a', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, flexGrow: 1, color: '#1a5d3a' }}>
+            문제 저장이 완료되었습니다!
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => {
+              setOpenQDoneSnackbar(false);
+              navigate('/mypage');
+            }}
+            sx={{
+              bgcolor: '#34C759',
+              color: 'white',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: 1.5,
+              px: 1.5,
+              py: 0.5,
+              flexShrink: 0,
+              '&:hover': { bgcolor: '#28a745' },
+            }}
+          >
+            마이페이지
+          </Button>
+          <IconButton
+            size="small"
+            onClick={() => setOpenQDoneSnackbar(false)}
+            sx={{ color: '#1a5d3a', '&:hover': { bgcolor: 'rgba(26,93,58,0.1)' } }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        </Box>
+      </Snackbar>
     </>
   );
 }

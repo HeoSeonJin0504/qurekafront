@@ -150,7 +150,7 @@ const transformQuestionItem = (item: any): QuestionItem => {
     : "-";
 
   return {
-    id: item.question_id ?? item.id,
+    id: item.selection_id ?? item.question_id ?? item.id,
     name: item.file_name ?? item.name ?? "untitled",
     displayName: item.file_name ?? item.name ?? "untitled",
     // ✅ 필수 필드 추가
